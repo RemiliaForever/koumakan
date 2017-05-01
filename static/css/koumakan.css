@@ -1,0 +1,31 @@
+nav > .mdl-navigation__link > i {
+    margin-right: 32px;
+}
+
+.remi-face > img {
+    width: 96px;
+    margin-top: 32px;
+    margin-bottom: 16px;
+    border-radius: 50%;
+
+}
+.remi-main {
+    padding-left: 32px;
+    padding-right: 32px;
+}
+.remi-card {
+    width: 100%;
+}
+.remi-card > .mdl-card__actions {
+    display: flex;
+    box-sizing: border-box;
+    align-items: center;
+    font-size: 13px;
+    color: grey;
+}
+.remi-card > .mdl-card__supporting-text {
+    font-size: 15px;
+}
+.remi-card > .mdl-card__actions > i {
+    font-size: 13px;
+}

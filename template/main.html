@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome to Koumakan!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ static_url('material/material.min.css') }}">
+    <script src="{{ static_url('material/material.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ static_url('material/material-icon.css') }}">
+
+    <link rel="stylesheet" href="{{ static_url('css/koumakan.css') }}">
+</head>
+<body>
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer">
+    <header class="mdl-layout__header mdl-color--grey-100">
+        <div class="mdl-layout__header-row">
+            <span class="mdl-layout-title">首页</span>
+            <div class="mdl-layout-spacer"></div>
+            <nav class="mdl-navigation">
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
+                    <label class="mdl-button mdl-js-button mdl-button--icon" for="search-expandable">
+                        <i class="material-icons">search</i>
+                    </label>
+                    <div class="mdl-textfield__expandable-holder">
+                        <input class="mdl-textfield__input" type="text" id="search-expandable" />
+                        <label class="mdl-textfield__label" for="search-expandable">Search text</label>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+    <div class="mdl-layout__drawer">
+        <div class="remi-face" style="text-align: center;">
+            <img src="{{ static_url('img/face.jpg') }}" alt="RemiliaForever">
+            <span class="mdl-layout-title">RemiliaForever</span>
+        </div>
+        <nav class="mdl-navigation">
+            <a class="mdl-navigation__link" href="">
+                <i class="material-icons">home</i>首页
+            </a>
+            <a class="mdl-navigation__link" href="">
+                <i class="material-icons">archive</i>日志
+            </a>
+            <a class="mdl-navigation__link" href="javascript:document.getElementById('a').append(v)">
+                <i class="material-icons">archive</i>归档
+            </a>
+            <a class="mdl-navigation__link" href="">
+                <i class="material-icons">link</i>关于
+            </a>
+        </nav>
+        <footer>
+        </footer>
+    </div>
+    <main class="mdl-layout__content mdl-grid mdl-color--grey-100 remi-main">
+    {% block main %}
+    {% end %}
+    </main>
+</div>
+</body>
+</html>

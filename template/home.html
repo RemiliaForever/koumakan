@@ -1,0 +1,23 @@
+{% extends 'main.html' %}
+{% block main %}
+{% for card in cards %}
+<div class="mdl-cell mdl-cell--12-col">
+    <div class="mdl-card mdl-shadow--2dp remi-card">
+        <div class="mdl-card__title">
+            <span class="mdl-card__title-text">{{ card.title }}</span>
+        </div>
+        <div class="mdl-card__supporting-text">{{ card.brief }}</div>
+        <div class="mdl-card__actions mdl-card--border">
+            <i class="material-icons">date_range</i>{{ card.date }}&nbsp;&nbsp;
+            {% for l in card.label.split('\t') %}
+            &nbsp;&nbsp;<i class="material-icons">turned_in</i>{{ l }}
+            {% end %}
+            <div class="mdl-layout-spacer"></div>
+            <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">
+                查看全文...
+            </a>
+        </div>
+    </div>
+</div>
+{% end %}
+{% end %}
