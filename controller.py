@@ -1,6 +1,6 @@
 import tornado.web
 import traceback
-import entity
+from entity import *
 
 URLMap = list()
 def route(url):
@@ -41,16 +41,11 @@ class Handler(tornado.web.RequestHandler):
 @route(r'^/')
 class home(Handler):
     def get(self):
-        a = entity.Article()
-        a.title = '科学上网与网络安全 - gfw原理初探'
-        a.brief = '这期初步了解了GFW的原理以及相应的应对方法，如DNS污染、IP封锁、特征抓取等；分析了一些常见科学上网工具的原理，如OpenVPN、ShadowSocks、Lantern等；同时推荐了一些常用的网站以及工具。此外，提出一些可能感兴趣的话题，并收集相关意见，以此决定将来几期的主题。'
-        a.label = 'home\tgfw\t网络安全\t阿三浮动\tafd'
-        a.date = '2017年4月23日'
         args = {
             'title': 'Welcome to Koumakan',
             'error': '<br>asdf',
             'nav': self.get_navigate(),
-            'cards': [a,a,a,a,a]
+            'cards': list(Article.select())
         }
         self.render('home.html', **args)
 

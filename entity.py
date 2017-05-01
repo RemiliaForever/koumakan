@@ -1,7 +1,8 @@
 from peewee import *
+import json
 
-database = MySQLDatabase('koumakan', **{
-    'charset': 'utf8mb4'})
+database = MySQLDatabase('koumakan', **json.loads(
+    ''.join(open('settings.json').readlines())))
 
 class BaseModel(Model):
     class Meta:

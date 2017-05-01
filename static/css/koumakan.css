@@ -15,6 +15,7 @@ nav > .mdl-navigation__link > i {
 }
 .remi-card {
     width: 100%;
+    padding: 5px;
 }
 .remi-card > .mdl-card__actions {
     display: flex;
@@ -23,9 +24,12 @@ nav > .mdl-navigation__link > i {
     font-size: 13px;
     color: grey;
 }
-.remi-card > .mdl-card__supporting-text {
-    font-size: 15px;
+.remi-card > .remi-brief {
+    margin-left: 5px;
+    margin-right: 5px;
+    font-size: 14px;
+    color: grey;
 }
 .remi-card > .mdl-card__actions > i {
-    font-size: 13px;
+    font-size: 16px;
 }

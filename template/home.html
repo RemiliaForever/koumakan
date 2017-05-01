@@ -1,15 +1,16 @@
 {% extends 'main.html' %}
 {% block main %}
 {% for card in cards %}
-<div class="mdl-cell mdl-cell--12-col">
-    <div class="mdl-card mdl-shadow--2dp remi-card">
+<div class="mdl-grid">
+    <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col remi-card">
         <div class="mdl-card__title">
-            <span class="mdl-card__title-text">{{ card.title }}</span>
+            <a class="mdl-card__title-text" href="#">{{ card.title }}</a>
         </div>
-        <div class="mdl-card__supporting-text">{{ card.brief }}</div>
+        <div class="mdl-card__title remi-brief">{{ card.brief }}</div>
         <div class="mdl-card__actions mdl-card--border">
-            <i class="material-icons">date_range</i>{{ card.date }}&nbsp;&nbsp;
-            {% for l in card.label.split('\t') %}
+            <i class="material-icons">date_range</i>
+            {{ card.date.strftime('%Y年%m月%d月 %H:%M') }}&nbsp;&nbsp;
+            {% for l in card.label.split('\t')[0:3] %}
             &nbsp;&nbsp;<i class="material-icons">turned_in</i>{{ l }}
             {% end %}
             <div class="mdl-layout-spacer"></div>
