@@ -1,5 +1,9 @@
+a {
+    text-decoration: none;
+}
+
 nav > .mdl-navigation__link > i {
-    margin-right: 32px;
+    margin-right: 28px;
 }
 
 .remi-face > img {
@@ -30,6 +34,9 @@ nav > .mdl-navigation__link > i {
     font-size: 14px;
     color: grey;
 }
-.remi-card > .mdl-card__actions > i {
+.remi-card i {
     font-size: 16px;
+}
+.remi-card a {
+    color: grey;
 }

@@ -17,7 +17,7 @@ settings = {
     'cookie_secret': 'zY0BmjroRDmhRmyFiQIYOQawZRgJv0wVimB31EvtEX4=',
     'debug': True,
     'xheader': True,
-    "autoescape":None
+    #"autoescape":None
 }
 
 

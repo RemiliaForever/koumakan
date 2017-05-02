@@ -38,21 +38,33 @@ class Handler(tornado.web.RequestHandler):
     def post(self):
         self.get(self)
 
-@route(r'^/')
+@route(r'/')
+class root(Handler):
+    def get(self):
+        self.redirect('/home')
+
+@route(r'/home')
 class home(Handler):
     def get(self):
         args = {
             'title': 'Welcome to Koumakan',
-            'error': '<br>asdf',
-            'nav': self.get_navigate(),
             'cards': list(Article.select())
         }
         self.render('home.html', **args)
 
-@route(r'^/welcome')
-class welcome(Handler):
-    def get(self, inputs, *_):
-        self.write('inputs:' + inputs)
+@route(r'/type/(\w+)')
+class type(Handler):
+    def get(self, param):
+        args = {
+            'title': param + '分类下的文章',
+            'cards': list(Article.select())
+        }
+        self.render('home.html', **args)
+
+@route(r'/article/(\d+)')
+class article(Handler):
+    def get(self, article_id):
+        self.render('article.html')
 
 @route(r'.*')
 class PageNotFoundHandler(Handler):

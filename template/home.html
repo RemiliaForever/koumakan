@@ -4,14 +4,14 @@
 <div class="mdl-grid">
     <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col remi-card">
         <div class="mdl-card__title">
-            <a class="mdl-card__title-text" href="#">{{ card.title }}</a>
+            <a class="mdl-card__title-text" href="/article/{{card.id}}">{{ card.title }}</a>
         </div>
         <div class="mdl-card__title remi-brief">{{ card.brief }}</div>
         <div class="mdl-card__actions mdl-card--border">
             <i class="material-icons">date_range</i>
             {{ card.date.strftime('%Y年%m月%d月 %H:%M') }}&nbsp;&nbsp;
             {% for l in card.label.split('\t')[0:3] %}
-            &nbsp;&nbsp;<i class="material-icons">turned_in</i>{{ l }}
+            &nbsp;&nbsp;<i class="material-icons">turned_in</i><a href="/search/{{l}}">{{ l }}</a>
             {% end %}
             <div class="mdl-layout-spacer"></div>
             <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">
