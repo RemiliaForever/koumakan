@@ -5,21 +5,40 @@ a {
 nav > .mdl-navigation__link > i {
     margin-right: 28px;
 }
-
+.remi-face {
+    text-align: center;
+}
 .remi-face > img {
     width: 96px;
     margin-top: 32px;
     margin-bottom: 16px;
     border-radius: 50%;
-
 }
 .remi-main {
     padding-left: 32px;
     padding-right: 32px;
+    padding-top: 16px;
 }
 .remi-card {
-    width: 100%;
     padding: 5px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+@media(min-width:960px){
+    .remi-card {
+        width: 780px;
+    }
+}
+@media(min-width:1600px){
+    .remi-card {
+        width: 1400px;
+    }
+}
+@media(min-width:2160px){
+    .remi-card {
+        width: 1980px;
+    }
 }
 .remi-card > .mdl-card__actions {
     display: flex;

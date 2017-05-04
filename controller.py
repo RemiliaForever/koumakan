@@ -17,10 +17,6 @@ class Handler(tornado.web.RequestHandler):
 #        if self.request.protocol == 'http':
 #            self.redirect('https://' + self.request.host, permanent=False)
 
-    def get_navigate(self):
-        ''' 获取导航栏信息 '''
-        pass
-
     def write_error(self, status_code, **kwargs):
         ''' Handler基类捕获所有异常，通过自定义界面渲染 '''
         tmp = kwargs.get('exc_info')
@@ -31,7 +27,6 @@ class Handler(tornado.web.RequestHandler):
         args = {
             'title': title,
             'error': error,
-            'nav': self.get_navigate()
         }
         self.render('error.html', **args)
 
@@ -65,6 +60,11 @@ class type(Handler):
 class article(Handler):
     def get(self, article_id):
         self.render('article.html')
+
+@route(r'/rss')
+class rss(Handler):
+    def get(self):
+        self.write("rss")
 
 @route(r'.*')
 class PageNotFoundHandler(Handler):
