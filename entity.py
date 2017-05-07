@@ -8,21 +8,13 @@ class BaseModel(Model):
     class Meta:
         database = database
 
-class About(BaseModel):
-    content = TextField(null=True)
-    date = DateTimeField(null=True)
-    title = CharField(primary_key=True)
-
-    class Meta:
-        db_table = 'about'
-
 class Article(BaseModel):
     brief = TextField(null=True)
     content = TextField(null=True)
     date = DateTimeField(null=True)
     label = CharField(index=True, null=True)
     title = CharField(index=True, null=True)
-    type = IntegerField(null=True)
+    type = CharField(null=True)
 
     class Meta:
         db_table = 'article'

@@ -1,5 +1,6 @@
 {% extends 'main.html' %}
 {% block main %}
+
 {% for card in cards %}
 <div class="mdl-grid">
     <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col remi-card">
@@ -11,7 +12,7 @@
             <i class="material-icons">date_range</i>
             {{ card.date.strftime('%Y年%m月%d月 %H:%M') }}&nbsp;&nbsp;
             {% for l in card.label.split('\t')[0:3] %}
-            &nbsp;&nbsp;<i class="material-icons">turned_in</i><a href="/search/{{l}}">{{ l }}</a>
+            &nbsp;&nbsp;<i class="material-icons">turned_in</i><a class="remi-label" href="/search/{{l}}">{{ l }}</a>
             {% end %}
             <div class="mdl-layout-spacer"></div>
             <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" href="/article/{{card.id}}">
@@ -21,4 +22,5 @@
     </div>
 </div>
 {% end %}
+
 {% end %}

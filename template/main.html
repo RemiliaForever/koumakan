@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Welcome to Koumakan!</title>
+    <title>{{ title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="{{ static_url('material/material.min.css') }}">
@@ -22,10 +22,10 @@
                     <label class="mdl-button mdl-js-button mdl-button--icon" for="search-expandable">
                         <i class="material-icons">search</i>
                     </label>
-                    <div class="mdl-textfield__expandable-holder">
-                        <input class="mdl-textfield__input" type="text" id="search-expandable" />
+                    <form class="mdl-textfield__expandable-holder" action="/search">
+                        <input class="mdl-textfield__input" type="text" id="search-expandable" name="param"/>
                         <label class="mdl-textfield__label" for="search-expandable">Search text</label>
-                    </div>
+                    </form>
                 </div>
             </nav>
         </div>
@@ -40,16 +40,16 @@
             <a class="mdl-navigation__link" href="/home">
                 <i class="material-icons">home</i>首页
             </a>
-            <a class="mdl-navigation__link" href="/type/it">
+            <a class="mdl-navigation__link" href="/type/IT">
                 <i class="material-icons">dashboard</i>IT
             </a>
-            <a class="mdl-navigation__link" href="/type/acg">
+            <a class="mdl-navigation__link" href="/type/ACG">
                 <i class="material-icons">dashboard</i>ACG
             </a>
-            <a class="mdl-navigation__link" href="/type/thuber">
+            <a class="mdl-navigation__link" href="/list">
                 <i class="material-icons">dashboard</i>归档
             </a>
-            <a class="mdl-navigation__link" href="/type/about">
+            <a class="mdl-navigation__link" href="/type/ABOUT">
                 <i class="material-icons">link</i>关于
             </a>
         </nav>
