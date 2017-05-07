@@ -8,6 +8,10 @@
     <script src="{{ static_url('material/material.min.js') }}"></script>
     <link rel="stylesheet" href="{{ static_url('material/material-icon.css') }}">
 
+    <link rel="stylesheet" href="{{ static_url('highlight/github.min.css') }}">
+    <script src="{{ static_url('highlight/highlight.min.js') }}"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
     <link rel="stylesheet" href="{{ static_url('css/koumakan.css') }}">
 </head>
 <body>
@@ -41,10 +45,10 @@
                 <i class="material-icons">home</i>首页
             </a>
             <a class="mdl-navigation__link" href="/type/IT">
-                <i class="material-icons">dashboard</i>IT
+                <i class="material-icons">phonelink</i>IT
             </a>
             <a class="mdl-navigation__link" href="/type/ACG">
-                <i class="material-icons">dashboard</i>ACG
+                <i class="material-icons">games</i>ACG
             </a>
             <a class="mdl-navigation__link" href="/list">
                 <i class="material-icons">dashboard</i>归档

@@ -1,11 +1,25 @@
-{% extends 'main.html' %}
+{% extends 'base.html' %}
 {% block main %}
 
-{% for card in cards %}
+{% if len(cards)==0 %}
 <div class="mdl-grid">
     <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col remi-card">
         <div class="mdl-card__title">
+            <div class="mdl-layout-spacer"></div>
+            <span class="mdl-card__title-text">没有找到相应的结果。</span>
+            <div class="mdl-layout-spacer"></div>
+        </div>
+    </div>
+</div>
+{% else %}
+{% for card in cards %}
+<div class="mdl-grid">
+    <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-color--white remi-card">
+        <div class="mdl-card__title">
             <a class="mdl-card__title-text" href="/article/{{card.id}}">{{ card.title }}</a>
+        </div>
+        <div class="mdl-card__menu">
+            <i class="material-icons">{{card.icon}}</i>
         </div>
         <div class="mdl-card__title remi-brief">{{ card.brief }}</div>
         <div class="mdl-card__actions mdl-card--border">
@@ -18,6 +32,19 @@
             <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" href="/article/{{card.id}}">
                 查看全文...
             </a>
+        </div>
+    </div>
+</div>
+{% end %}
+{% end %}
+
+{% if pages > 1 %}
+<div class="mdl-grid mdl-paging">
+    <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col remi-card">
+        <div class="mdl-card__actions">
+            <ul>
+                <li>1</li>
+            </ul>
         </div>
     </div>
 </div>

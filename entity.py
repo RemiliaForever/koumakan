@@ -19,18 +19,13 @@ class Article(BaseModel):
     class Meta:
         db_table = 'article'
 
-class User(BaseModel):
-    name = CharField(null=True)
-    sign = CharField(null=True)
-
-    class Meta:
-        db_table = 'user'
-
 class Comment(BaseModel):
     article = ForeignKeyField(db_column='article_id', null=True, rel_model=Article, to_field='id')
     content = TextField(null=True)
     name = CharField(null=True)
-    user = ForeignKeyField(db_column='user_id', null=True, rel_model=User, to_field='id')
+    email = CharField(null=True)
+    website = CharField(null=True)
+    date = DateTimeField(null=True)
 
     class Meta:
         db_table = 'comment'

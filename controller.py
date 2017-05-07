@@ -3,6 +3,8 @@ import traceback
 import entity
 import datetime
 
+import pdb
+
 URLMap = list()
 def route(url):
     def decorator(handler):
@@ -23,28 +25,39 @@ class Handler(tornado.web.RequestHandler):
     def write_error(self, status_code, **kwargs):
         ''' Handler基类捕获所有异常，通过自定义界面渲染 '''
         article = entity.Article()
-        tmp = kwargs.get('exc_info')
-        error = tmp[0]
-        title = tmp[1]
-        article.title = title
-        article.brief = error
-        article.content = traceback.format_exc()
+        article.title = f'HTTP {status_code}'
+        article.brief = None
+        article.content = '<pre><code class="python">'+'\n'.join(traceback.format_exception(*kwargs['exc_info']))+'</code></pre>'
         article.date = datetime.datetime.now()
         article.label = 'error'
+        article.type = 'error'
+        article.icon = 'error'
         self.args.update({
-            'title': title,
+            'title': article.title,
             'article': article,
+            'comments': 'tag for error page',
+            'pre_article': None,
+            'next_article': None
         })
         self.render('article.html', **self.args)
 
     def post(self):
         self.get(self)
 
+    TIMap = {
+        'IT':'phonelink',
+        'ACG':'games',
+        'ABOUT':'link'
+    }
+
     def page_helper(self):
         self.args.update({'pages':int(self.query.count()/10)})
         page = int(self.get_argument('page', 1))
+        pagesize = int(self.get_cookie('pagesize', 10))
         self.args.update({'page':page})
-        self.args.update({'cards':self.query.paginate(page, 10)})
+        self.args.update({'cards':self.query.paginate(page, pagesize)})
+        for card in self.args.get('cards'):
+            card.icon = self.TIMap.get(card.type)
 
 @route(r'/')
 class Root(Handler):
@@ -97,12 +110,59 @@ class Search(Handler):
 @route(r'/article/(\d+)')
 class Article(Handler):
     def get(self, article_id):
-        article = entity.Article.get(entity.Article.id==article_id)
+        article_id = int(article_id)
+        try:
+            article = entity.Article.get(entity.Article.id==article_id)
+        except entity.Article.DoesNotExist:
+            raise tornado.web.HTTPError(404)
+        try:
+            pre_article = entity.Article.get(entity.Article.id==article_id-1)
+        except entity.Article.DoesNotExist:
+            pre_article = None
+        try:
+            next_article = entity.Article.get(entity.Article.id==article_id+1)
+        except entity.Article.DoesNotExist:
+            next_article = None
+        try:
+            comments = list(entity.Comment.select()
+                    .where(entity.Comment.article==article)
+                    .order_by(entity.Comment.date.desc()))
+        except entity.Comment.DoesNotExist:
+            comments = None
+        article.icon = self.TIMap.get(article.type)
         self.args.update({
             'title': article.title,
-            'article': article
+            'article': article,
+            'comments': comments,
+            'pre_article': pre_article,
+            'next_article': next_article
         })
         self.render('article.html', **self.args)
+
+@route(r'/comment_post')
+class CommentPost(Handler):
+    def post(self):
+        comment = entity.Comment()
+        comment.name = self.get_argument('name').strip()
+        if comment.name == '':
+            self.write('Name could not be null!')
+            return
+        comment.email = self.get_argument('email').strip()
+        if comment.email == '':
+            self.write('Email could not be null!')
+            return
+        comment.website = self.get_argument('website').strip()
+        comment.article = self.get_argument('id').strip()
+        comment.content = self.get_argument('comment').strip()
+        comment.date = datetime.datetime.now()
+        if comment.content == '':
+            self.write('Comment could not be null!')
+            return
+        comment.save()
+        self.write(f'success')
+
+    def write_error(self, status_code, **kwargs):
+        self.write(f'Post Failed! Error Code {status_code}')
 
 @route(r'/rss')
 class RSS(Handler):

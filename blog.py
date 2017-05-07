@@ -20,12 +20,9 @@ settings = {
     #"autoescape":None
 }
 
-
 def on_kill(*_):
     tornado.log.app_log.info('progress stop')
     os._exit(0)
-
-
 
 if __name__ == "__main__":
     tornado.options.parse_command_line()
@@ -36,4 +33,3 @@ if __name__ == "__main__":
     http_server.listen(80)
     controller.entity.database.connect()
     tornado.ioloop.IOLoop.instance().start()
-

@@ -1,29 +1,159 @@
-{% extends 'main.html' %}
+{% extends 'base.html' %}
 {% block main %}
 <!-- main -->
 <div class="mdl-grid">
     <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col remi-card">
-        <div class="mdl-card__title">
-            Title
+        <div style="margin-top:32px;text-align:center">
+            <span style="font-size:28px">{{ article.title }}</span>
         </div>
-        <div class="mdl-card__title remi-brief">{{ article.brief }}</div>
-        <div class="mdl-card__actions mdl-card--border">
+        <div class="mdl-card__actions">
+            <div class="mdl-layout-spacer"></div>
             <i class="material-icons">date_range</i>
-            {{ article.date.strftime('%Y年%m月%d月 %H:%M') }}&nbsp;&nbsp;
+            {{ article.date.strftime('%Y年%m月%d月 %H:%M:%S') }}&nbsp;&nbsp;
+            <i class="material-icons">{{ article.icon }}</i><a class="remi-label" href=/type/{{article.type}}>{{ article.type }}</a>
             {% for l in article.label.split('\t')[0:3] %}
-            &nbsp;&nbsp;<i class="material-icons">turned_in</i><a href="/search/{{l}}">{{ l }}</a>
+            &nbsp;&nbsp;<i class="material-icons">turned_in</i><a class="remi-label" href="/search/{{l}}">{{ l }}</a>
             {% end %}
             <div class="mdl-layout-spacer"></div>
-            <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">
-                查看全文...
+        </div>
+        {% if article.brief != None %}
+        <div class="mdl-card__title remi-brief mdl-color--grey-100">
+            <span>{% raw article.brief %}</span>
+        </div>
+        {% end %}
+        <div class="mdl-card__title remi-content">{% raw article.content %}</div>
+        <div class="mdl-card__actions mdl-card--border">
+            {% if pre_article != None %}
+            <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" href="/article/{{pre_article.id}}">
+                上一篇：{{ pre_article.title }}
             </a>
+            {% else %}
+            <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" disabled>
+                上一篇：没有了
+            </a>
+            {% end %}
+            <div class="mdl-layout-spacer"></div>
+            {% if next_article != None %}
+            <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" href="/article/{{next_article.id}}">
+                下一篇：{{ next_article.title }}
+            </a>
+            {% else %}
+            <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" disabled>
+                下一篇：没有了
+            </a>
+            {% end %}
         </div>
     </div>
 </div>
-<!-- comment -->
+{% if comments != 'tag for error page' %}
+<!-- comments -->
 <div class="mdl-grid">
-    <div class="mdl-card">
+    <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col remi-card" style="padding:32px">
+        {% if len(comments) == 0 %}
+        <div class="mdl-card__title">
+            <div class="mdl-layout-spacer"></div>
+            <span class="mdl-card__title-text">目前尚未有评论。</span>
+            <div class="mdl-layout-spacer"></div>
+        </div>
+        {% else %}
+        <p style="font-size:24px;">评论列表</p>
+        {% for c in comments %}
+        <div class="mdl-card__actions mdl-card--border">
+        <div class="remi-comment">
+            {% if c.website != '' %}
+            <img src="{{c.website}}/favicon.ico">
+            {% else %}
+            <img src="/favicon.ico">
+            {% end %}
+            <a href="{{c.website}}">{{ c.name }}</a>
+            <div class="mdl-layout-spacer"></div>
+            <span>{{ c.date }}</span>
+            <p>{{ c.content }}</p>
+        </div>
+        </div>
+        {% end %}
+        {% end %}
     </div>
 </div>
 <!-- form -->
+<form class="mdl-grid" action="#">
+    <p style="display:none">
+        <input type="hidden" id="id" name="id" value="{{ article.id }}">
+    </p>
+    <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col remi-card" style="padding:32px">
+        <p style="font-size:24px;">发表评论</p>
+        <span style="font-size:16px;color:grey">电子邮件地址不会被公开</span>
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width:100%">
+            <textarea class="mdl-textfield__input" type="text" rows= "5" id="comment" name="comment" style="width:100%"></textarea>
+            <label class="mdl-textfield__label" for="comment">评论</label>
+        </div>
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" id="name" name="name" onchange="input_changed()">
+            <label class="mdl-textfield__label" for="name">姓名*</label>
+        </div>
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" id="email" name="email" onchange="input_changed()">
+            <label class="mdl-textfield__label" for="email">电子邮件*</label>
+        </div>
+        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+            <input class="mdl-textfield__input" type="text" id="website" name="website">
+            <label class="mdl-textfield__label" for="website">站点</label>
+        </div>
+        <button id="btn-submit" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" style="width:100px" type="button" disabled onclick="comment_post()">提交评论</button>
+    </div>
+</form>
+<div id="comment-toast" class="mdl-js-snackbar mdl-snackbar">
+  <div class="mdl-snackbar__text"></div>
+  <button class="mdl-snackbar__action" type="button"></button>
+</div>
+<script>
+    var issend = false;
+    function input_changed() {
+        var name = document.querySelector('#name').value;
+        var email = document.querySelector('#email').value;
+        if (name.trim()!='' && email.trim()!='' && !issend)
+            document.querySelector('#btn-submit').removeAttribute('disabled');
+        else
+            document.querySelector('#btn-submit').setAttribute('disabled',null);
+    }
+    function comment_post() {
+        var btn = document.querySelector('#btn-submit')
+        issend = true
+        btn.setAttribute('disabled', null)
+        btn.innerText='提交中...'
+
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (request.readyState != 4)
+                return;
+            var snackbarContainer = document.querySelector('#comment-toast');
+            if (request.responseText != 'success'){
+                var data = {message: 'Post failed! '+request.responseText};
+                snackbarContainer.MaterialSnackbar.showSnackbar(data);
+                btn.innerText='提交评论';
+                issend = false;
+                btn.removeAttribute('disabled')
+            } else {
+                var data = {message: request.responseText};
+                snackbarContainer.MaterialSnackbar.showSnackbar(data);
+                btn.innerText='提交成功'
+                location.reload(true)
+            }
+        }
+        var id = document.querySelector('#id').value
+        var name = document.querySelector('#name').value
+        var email = document.querySelector('#email').value
+        var website = document.querySelector('#website').value
+        var comment = document.querySelector('#comment').value
+
+        request.open('POST', '/comment_post', true);
+        request.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+        request.send('id='+id+
+                        '&name='+name+
+                        '&email='+email+
+                        '&website='+website+
+                        '&comment='+comment)
+  }
+</script>
+{% end %}
 {% end %}
