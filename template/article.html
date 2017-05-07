@@ -149,10 +149,10 @@
         request.open('POST', '/comment_post', true);
         request.setRequestHeader("Content-type","application/x-www-form-urlencoded");
         request.send('id='+id+
-                        '&name='+name+
-                        '&email='+email+
-                        '&website='+website+
-                        '&comment='+comment)
+                        '&name='+encodeURI(name)+
+                        '&email='+encodeURI(email)+
+                        '&website='+encodeURI(website)+
+                        '&comment='+encodeURI(comment))
   }
 </script>
 {% end %}
