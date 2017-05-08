@@ -2,6 +2,7 @@ import tornado.web
 import traceback
 import entity
 import datetime
+import hashlib
 
 import pdb
 
@@ -147,11 +148,14 @@ class CommentPost(Handler):
             self.write('Email could not be null!')
             return
         comment.website = self.get_argument('website').strip()
-        if not comment.startswith('http'):
+        if comment.website == '':
+            comment.website = 'javascript:void(0);'
+        elif not comment.website.startswith('http'):
             comment.website = 'http://' + comment.website
         comment.article = self.get_argument('id').strip()
         comment.content = self.get_argument('comment').strip()
         comment.date = datetime.datetime.now()
+        comment.face = 'https://www.gravatar.com/avatar/' + hashlib.md5(comment.email.lower().encode('utf8')).hexdigest()
         if comment.content == '':
             self.write('Comment could not be null!')
             return

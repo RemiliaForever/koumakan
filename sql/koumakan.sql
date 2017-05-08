@@ -58,6 +58,7 @@ CREATE TABLE `comment` (
   `name` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `website` varchar(255) DEFAULT NULL,
+  `face` varchar(255) DEFAULT NULL,
   `content` text,
   `date` datetime,
   PRIMARY KEY (`id`),

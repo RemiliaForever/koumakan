@@ -24,6 +24,7 @@ class Comment(BaseModel):
     content = TextField(null=True)
     name = CharField(null=True)
     email = CharField(null=True)
+    face = CharField(null=True)
     website = CharField(null=True)
     date = DateTimeField(null=True)
 
