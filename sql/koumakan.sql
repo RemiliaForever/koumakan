@@ -59,6 +59,7 @@ CREATE TABLE `comment` (
   `email` varchar(255) DEFAULT NULL,
   `website` varchar(255) DEFAULT NULL,
   `content` text,
+  `date` datetime,
   PRIMARY KEY (`id`),
   KEY `fk_comment_1_idx` (`article_id`),
   CONSTRAINT `fk_comment_1` FOREIGN KEY (`article_id`) REFERENCES `article` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
