@@ -4,9 +4,11 @@ import json
 database = MySQLDatabase('koumakan', **json.loads(
     ''.join(open('settings.json').readlines())))
 
+
 class BaseModel(Model):
     class Meta:
         database = database
+
 
 class Article(BaseModel):
     brief = TextField(null=True)
@@ -19,6 +21,7 @@ class Article(BaseModel):
     class Meta:
         db_table = 'article'
 
+
 class Comment(BaseModel):
     article = ForeignKeyField(db_column='article_id', null=True, rel_model=Article, to_field='id')
     content = TextField(null=True)
@@ -30,4 +33,3 @@ class Comment(BaseModel):
 
     class Meta:
         db_table = 'comment'
-
