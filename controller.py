@@ -15,11 +15,6 @@ def route(url):
 
 class Handler(tornado.web.RequestHandler):
     ''' Handler类基类，实现自定义异常捕获和通用函数 '''
-#    def prepare(self):
-#        ''' 重定向http到https '''
-#        if self.request.protocol == 'http':
-#            self.redirect('https://' + self.request.host, permanent=False)
-
     args = {}
 
     def write_error(self, status_code, **kwargs):
