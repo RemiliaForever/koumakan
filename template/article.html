@@ -61,7 +61,7 @@
         {% for i,c in enumerate(comments) %}
         <div class="mdl-card__actions mdl-card--border">
             <div class="remi-comment">
-                <img src="{{c.face}}?size=48&d=identicon">
+                <img async-src="{{c.face}}?size=48&d=identicon" class="async-img">
                 <a href="{{c.website}}">{{ c.name }}</a>
                 <div class="mdl-layout-spacer"></div>
                 <span>#{{ c_len - i }}</span>
@@ -123,6 +123,12 @@
     <button class="mdl-snackbar__action" type="button"></button>
 </div>
 <script>
+window.onload = function() {
+    var i = document.querySelectorAll('.async-img');
+    [].forEach.call(i, function(img) {
+        img.setAttribute('src', img.getAttribute('async-src'))
+    });
+}
 var issend = false;
 function input_changed() {
     var name = document.querySelector('#name').value;
