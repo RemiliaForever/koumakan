@@ -46,11 +46,17 @@ class Handler(tornado.web.RequestHandler):
         'ABOUT':'link'
     }
 
-    def page_helper(self):
-        self.args.update({'pages':int(self.query.count()/10)})
+    def page_helper(self, url):
         page = int(self.get_argument('page', 1))
         pagesize = int(self.get_cookie('pagesize', 10))
+        count = self.query.count()
+        pages = int(count/pagesize) - ( 1 if pagesize%10==0 else 0)
         self.args.update({'page':page})
+        self.args.update({'pages': {
+            'size': pages,
+            'pre': f'{url}page={page-1}' if page>1 else None,
+            'next': f'{url}page={page+1}' if page<=pages else None
+        }})
         self.args.update({'cards':self.query.paginate(page, pagesize)})
         for card in self.args.get('cards'):
             card.icon = self.TIMap.get(card.type)
@@ -65,7 +71,7 @@ class Home(Handler):
     def get(self):
         self.query = (entity.Article.select()
                 .order_by(entity.Article.date.desc()))
-        self.page_helper()
+        self.page_helper(f'/home?')
         self.args.update({'title': 'Welcome to Koumakan'})
         self.render('home.html', **self.args)
 
@@ -75,7 +81,7 @@ class Type(Handler):
         self.query = (entity.Article.select()
                 .where(entity.Article.type==param)
                 .order_by(entity.Article.date.desc()))
-        self.page_helper()
+        self.page_helper(f'/type/{param}?')
         self.args.update({'title': param + ' 分类下的文章'})
         self.render('home.html', **self.args)
 
@@ -99,7 +105,7 @@ class Search(Handler):
             entity.Article.brief.contains(param)|
             entity.Article.label.contains(param))
             .order_by(entity.Article.date.desc()))
-        self.page_helper()
+        self.page_helper(f'/search?param={param}&')
         self.args.update({'title': param + ' 的搜索结果'})
         self.render('home.html', **self.args)
 

@@ -49,14 +49,23 @@
 </div>
 {% end %}
 {% end %}
-
-{% if pages > 1 %}
+{% if pages['size'] > 0 %}
 <div class="mdl-grid mdl-paging">
     <div class="mdl-card mdl-shadow--2dp mdl-cell mdl-cell--12-col remi-card">
         <div class="mdl-card__actions">
-            <ul>
-                <li>1</li>
-            </ul>
+            <div class="mdl-layout-spacer"></div>
+            {% if pages['pre'] == None %}
+            <a class="mdl-button mdl-js-button mdl-button--colored mdl-js-ripple-effect" style="width: 20%" href="#" disabled>上一页</a>
+            {% else %}
+            <a class="mdl-button mdl-js-button mdl-button--colored mdl-js-ripple-effect" style="width: 20%" href="{{pages['pre']}}">上一页</a>
+            {% end %}
+            <div class="mdl-layout-spacer"></div>
+            {% if pages['next'] == None %}
+            <a class="mdl-button mdl-js-button mdl-button--colored mdl-js-ripple-effect" style="width: 20%" href="#" disabled>下一页</a>
+            {% else %}
+            <a class="mdl-button mdl-js-button mdl-button--colored mdl-js-ripple-effect" style="width: 20%" href="{{pages['next']}}" >下一页</a>
+            {% end %}
+            <div class="mdl-layout-spacer"></div>
         </div>
     </div>
 </div>

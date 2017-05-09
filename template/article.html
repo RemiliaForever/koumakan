@@ -21,7 +21,7 @@
             <span>{% raw article.brief %}</span>
         </div>
         {% end %}
-        <div class="mdl-card__title remi-content">{% raw article.content %}</div>
+        <div class="remi-content">{% raw article.content %}</div>
         <div class="mdl-card__actions mdl-card--border">
             {% if pre_article != None %}
             <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" href="/article/{{pre_article.id}}">
