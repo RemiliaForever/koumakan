@@ -14,7 +14,7 @@ settings = {
     'template_path': os.path.join(os.path.dirname(__file__), 'template'),
     'cookie_secret': 'zY0BmjroRDmhRmyFiQIYOQawZRgJv0wVimB31EvtEX4=',
     'xheader': True,
-    # "autoescape":None
+    'debug': True
 }
 
 
@@ -26,7 +26,7 @@ def on_kill(*_):
 class MainHandler(tornado.web.RequestHandler):
     def prepare(self):
         if self.request.protocol == 'http':
-            self.redirect('https://' + self.request.host, permanent=False)
+            self.redirect('https://' + self.request.host + self.request.uri, permanent=False)
 
 
 if __name__ == "__main__":
