@@ -73,8 +73,7 @@ nav > .mdl-navigation__link > i {
 }
 .remi-card > .remi-content {
     text-indent: 30px;
-    margin-left: 15px;
-    margin-right: 15px;
+    margin: 15px;
     font-size: 14px;
 }
 .remi-card pre,code {

@@ -12,7 +12,6 @@ def route(url):
         URLMap.append((url, handler))
         print('mapping %s -> %s' % (url.ljust(20), handler))
         return handler
-
     return decorator
 
 
@@ -55,7 +54,7 @@ class Handler(tornado.web.RequestHandler):
         page = int(self.get_argument('page', 1))
         pagesize = int(self.get_cookie('pagesize', 10))
         count = self.query.count()
-        pages = int(count/pagesize) - ( 1 if pagesize%10==0 else 0)
+        pages = int(count/pagesize) - ( 1 if count%10==0 else 0)
         self.args.update({'page':page})
         self.args.update({'pages': {
             'size': pages,
@@ -92,17 +91,6 @@ class Type(Handler):
         self.page_helper(f'/type/{param}?')
         self.args.update({'title': param + ' 分类下的文章'})
         self.render('home.html', **self.args)
-
-
-@route(r'/list')
-class ListByTime(Handler):
-    def get(self):
-        param = self.get_argument('param')
-        self.args.update({
-            'title': param + ' 的搜索结果',
-            'cards': []
-        })
-        self.render('list.html', **args)
 
 
 @route(r'/search')
@@ -193,7 +181,7 @@ class RSS(Handler):
 
 @route(r'.*')
 class PageNotFoundHandler(Handler):
-    ''' 通过最后映射通用路径捕获404错误 '''
+    """ 通过最后映射通用路径捕获404错误 """
 
     def get(self):
         raise tornado.web.HTTPError(404)
