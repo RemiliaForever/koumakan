@@ -40,5 +40,4 @@ if __name__ == "__main__":
     http_server.listen(443)
     application = tornado.web.Application([(r'.*', MainHandler)])
     application.listen(80)
-    controller.entity.database.connect()
     tornado.ioloop.IOLoop.instance().start()

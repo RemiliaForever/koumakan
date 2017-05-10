@@ -18,6 +18,15 @@ def route(url):
 class Handler(tornado.web.RequestHandler):
     """ Handler类基类，实现自定义异常捕获和通用函数 """
 
+    def prepare(self):
+        entity.database.connect()
+
+    def on_finish(self):
+        entity.database.close()
+
+    def post(self):
+        self.get(self)
+
     args = {}
     query = None
 
@@ -40,9 +49,6 @@ class Handler(tornado.web.RequestHandler):
             'next_article': None
         })
         self.render('article.html', **self.args)
-
-    def post(self):
-        self.get(self)
 
     TIMap = {
         'IT': 'phonelink',
