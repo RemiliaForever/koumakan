@@ -12,7 +12,7 @@
             {{ article.date.strftime('%Y年%m月%d月 %H:%M:%S') }}&nbsp;&nbsp;
             <i class="material-icons">{{ article.icon }}</i><a class="remi-label" href=/type/{{article.type}}>{{ article.type }}</a>
             {% for l in article.label.split('\t')[0:3] %}
-            &nbsp;&nbsp;<i class="material-icons">turned_in</i><a class="remi-label" href="/search?aram={{l}}">{{ l }}</a>
+            &nbsp;&nbsp;<i class="material-icons">turned_in</i><a class="remi-label" href="/search?param={{l}}">{{ l }}</a>
             {% end %}
             <div class="mdl-layout-spacer"></div>
         </div>
