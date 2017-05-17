@@ -69,7 +69,10 @@ nav > .mdl-navigation__link > i {
     color: grey;
 }
 .remi-card > .remi-content {
-    margin: 15px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    margin-left: 30px;
+    margin-right: 30px;
 }
 .remi-card pre,code {
     text-indent: 0px;
