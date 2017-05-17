@@ -1,6 +1,7 @@
 import tornado.web
 import traceback
 import entity
+import feed
 import datetime
 import hashlib
 
@@ -82,6 +83,7 @@ class Root(Handler):
 class Home(Handler):
     def get(self):
         self.query = (entity.Article.select()
+                .where(entity.Article.id >= 10000)
                 .order_by(entity.Article.date.desc()))
         self.page_helper(f'/home?')
         self.args.update({'title': 'Welcome to Koumakan'})
@@ -93,6 +95,7 @@ class Type(Handler):
     def get(self, param):
         self.query = (entity.Article.select()
                 .where(entity.Article.type==param)
+                .where(entity.Article.id >= 10000)
                 .order_by(entity.Article.date.desc()))
         self.page_helper(f'/type/{param}?')
         self.args.update({'title': param + ' 分类下的文章'})
@@ -108,6 +111,7 @@ class Search(Handler):
             entity.Article.title.contains(param) |
             entity.Article.brief.contains(param) |
             entity.Article.label.contains(param))
+            .where(entity.Article.id >= 10000)
             .order_by(entity.Article.date.desc()))
         self.page_helper(f'/search?param={param}&')
         self.args.update({'title': param + ' 的搜索结果'})
@@ -182,7 +186,24 @@ class CommentPost(Handler):
 @route(r'/rss')
 class RSS(Handler):
     def get(self):
-        self.write("rss")
+        query = (entity.Article.select()
+            .where(entity.Article.id > 10000)
+            .order_by(entity.Article.date.desc()))
+        self.set_header('Content-Type', 'text/xml')
+        self.write(
+            feed.Feed(
+                feed.Channel(
+                    'RemiliaForever\'s Blog',
+                    'https://koumakan.cc',
+                    'Welcome to Koumakan!',
+                    [feed.Item(
+                        i.title,
+                        f'https://koumakan.cc/article/{i.id}',
+                        i.brief
+                    ) for i in query]
+                )
+            ).gen()
+        )
 
 
 @route(r'.*')
