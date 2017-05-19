@@ -66,19 +66,7 @@
                 <div class="mdl-layout-spacer"></div>
                 <span>#{{ c_len - i }}</span>
                 <span>
-                    {% set day_diff = (datetime.datetime.now()-c.date).days %}
-                    {% if day_diff == 0 %}
-                    {{ c.date.strftime('今天 %H:%M:%S') }}
-                    {% end %}
-                    {% if day_diff == 1 %}
-                    {{ c.date.strftime('昨天 %H:%M:%S') }}
-                    {% end %}
-                    {% if day_diff == 2 %}
-                    {{ c.date.strftime('前天 %H:%M:%S') }}
-                    {% end %}
-                    {% if day_diff >= 3 %}
                     {{ c.date.strftime('%Y年%m月%d月 %H:%M') }}
-                    {% end %}
                 </span>
                 <p>{{ c.content }}</p>
             </div>
