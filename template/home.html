@@ -24,7 +24,7 @@
         <div class="mdl-card__title remi-brief">{{ card.brief }}</div>
         <div class="mdl-card__actions mdl-card--border">
             <i class="material-icons">date_range</i>
-            {{ card.date.strftime('%Y年%m月%d月 %H:%M') }}&nbsp;&nbsp;
+            {{ card.date.strftime('%Y年%m月%d日 %H:%M') }}&nbsp;&nbsp;
             {% for l in card.label.split('\t')[0:3] %}
             &nbsp;&nbsp;<i class="material-icons">turned_in</i>
             <a class="remi-label" href="/search?param={{l}}">{{ l }}</a>
