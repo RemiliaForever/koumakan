@@ -171,7 +171,7 @@ class CommentPost(Handler):
         comment.article = self.get_argument('id').strip()
         comment.content = self.get_argument('comment').strip()
         comment.date = datetime.datetime.now()
-        comment.face = 'https://www.gravatar.com/avatar/' + hashlib.md5(
+        comment.avatar = 'https://www.gravatar.com/avatar/' + hashlib.md5(
             comment.email.lower().encode('utf8')).hexdigest()
         if comment.content == '':
             self.write('Comment could not be null!')

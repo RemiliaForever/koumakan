@@ -24,19 +24,7 @@
         <div class="mdl-card__title remi-brief">{{ card.brief }}</div>
         <div class="mdl-card__actions mdl-card--border">
             <i class="material-icons">date_range</i>
-            {% set day_diff = (datetime.datetime.now()-card.date).days %}
-            {% if day_diff == 0 %}
-            {{ card.date.strftime('今天 %H:%M:%S') }}&nbsp;&nbsp;
-            {% end %}
-            {% if day_diff == 1 %}
-            {{ card.date.strftime('昨天 %H:%M:%S') }}&nbsp;&nbsp;
-            {% end %}
-            {% if day_diff == 2 %}
-            {{ card.date.strftime('前天 %H:%M:%S') }}&nbsp;&nbsp;
-            {% end %}
-            {% if day_diff >= 3 %}
             {{ card.date.strftime('%Y年%m月%d月 %H:%M') }}&nbsp;&nbsp;
-            {% end %}
             {% for l in card.label.split('\t')[0:3] %}
             &nbsp;&nbsp;<i class="material-icons">turned_in</i>
             <a class="remi-label" href="/search?param={{l}}">{{ l }}</a>

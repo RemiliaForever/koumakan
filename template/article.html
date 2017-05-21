@@ -61,7 +61,7 @@
         {% for i,c in enumerate(comments) %}
         <div class="mdl-card__actions mdl-card--border">
             <div class="remi-comment">
-                <img async-src="{{c.face}}?size=48&d=identicon" class="async-img">
+                <img async-src="{{c.avatar}}?size=48&d=identicon" class="async-img">
                 <a href="{{c.website}}">{{ c.name }}</a>
                 <div class="mdl-layout-spacer"></div>
                 <span>#{{ c_len - i }}</span>
