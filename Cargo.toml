@@ -1,0 +1,8 @@
+[package]
+name = "koumakan"
+version = "0.1.0"
+authors = ["RemiliaForever <remilia@koumakan.cc>"]
+
+[dependencies]
+rocket = "0.3.0"
+rocket_codegen = "0.3.0"

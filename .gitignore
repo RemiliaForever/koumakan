@@ -1,0 +1,5 @@
+cert
+key
+cscope.*
+Cargo.lock
+/target/
