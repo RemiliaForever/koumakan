@@ -1,5 +1,3 @@
-cert
-key
-cscope.*
 Cargo.lock
+koumakan.db
 /target/

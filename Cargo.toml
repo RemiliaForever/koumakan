@@ -6,3 +6,8 @@ authors = ["RemiliaForever <remilia@koumakan.cc>"]
 [dependencies]
 rocket = "0.3.0"
 rocket_codegen = "0.3.0"
+diesel = { version = "0.15.1", features = ["sqlite", "chrono"] }
+diesel_codegen = { version = "0.15.0", features = ["sqlite"] }
+chrono = "0.4.0"
+r2d2-diesel = "0.15.0"
+r2d2 = "0.7.3"

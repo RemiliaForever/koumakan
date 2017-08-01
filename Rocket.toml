@@ -1,0 +1,6 @@
+[global]
+limits = { forms = 32768 }
+address = "localhost"
+port = 8000
+workers = 3
+log = "normal"
