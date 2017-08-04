@@ -4,7 +4,7 @@ Personal website, written in Rust.
 
 ## Framwork
 * DataBase: sqlite3
-* ConnectPool: r2d2
+* ConnectionPool: r2d2
 * ORM: diesel
 * Web: rocket
 * Template: handlebars

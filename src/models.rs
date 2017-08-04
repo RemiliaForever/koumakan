@@ -5,7 +5,8 @@ use chrono::NaiveDateTime;
 
 infer_schema!("koumakan.db");
 
-#[derive(Queryable, Insertable, Debug)]
+#[derive(Serialize)]
+#[derive(Queryable, Insertable)]
 #[table_name = "comment"]
 pub struct Comment {
     pub id: Option<i32>,
