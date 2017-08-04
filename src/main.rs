@@ -9,34 +9,41 @@ extern crate r2d2_diesel;
 extern crate r2d2;
 extern crate chrono;
 extern crate rocket;
+extern crate rocket_contrib;
+
+use rocket_contrib::Template;
+use std::path::{Path, PathBuf};
+use rocket::response::NamedFile;
 
 mod db;
-use db::DbConn;
 mod models;
+mod controller;
+use controller::*;
 
-use chrono::prelude::*;
-use diesel::prelude::*;
-use self::models::*;
-use self::models::comment::dsl::*;
+#[get("/<file..>")]
+fn files(file: PathBuf) -> Option<NamedFile> {
+    NamedFile::open(Path::new("static/").join(file)).ok()
+}
 
-#[get("/")]
-fn index(conn: DbConn) -> String {
-    let m = Comment {
-        id: None,
-        article_id: Some(1),
-        name: Some(String::from("RemiliaForever")),
-        avatar: Some(String::from("asdf")),
-        email: Some(String::from("remilia@koumakan.cc")),
-        website: None,
-        content: Some(String::from("content")),
-        date: Some(Local.ymd(2017, 1, 1).and_hms(0, 0, 0).naive_local()),
-    };
-    println!("{:?}", diesel::insert(&m).into(comment).execute(&*conn));
-    format!("{:?}\n", comment.load::<Comment>(&*conn))
+#[error(404)]
+fn not_found() -> String {
+    String::from("404")
+}
+
+#[error(500)]
+fn server_error() -> String {
+    String::from("500")
 }
 
 fn main() {
     let server = rocket::ignite();
     let dbpool = db::init();
-    server.mount("/", routes![index]).manage(dbpool).launch();
+    server
+        .mount("/", routes![root, index, all])
+        .mount("/static", routes![files])
+        .catch(errors![not_found, server_error])
+        .attach(Template::fairing())
+        .manage(dbpool)
+        .launch();
+
 }
