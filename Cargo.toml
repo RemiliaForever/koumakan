@@ -4,14 +4,14 @@ version = "0.1.0"
 authors = ["RemiliaForever <remilia@koumakan.cc>"]
 
 [dependencies]
-rocket = "0.3.0"
-rocket_codegen = "0.3.0"
-rocket_contrib = { version = "0.3.0", features = ["handlebars_templates"] }
+rocket = "0.3"
+rocket_codegen = "0.3"
+rocket_contrib = "0.3"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
-diesel = { version = "0.15.1", features = ["sqlite", "chrono"] }
-diesel_codegen = { version = "0.15.0", features = ["sqlite"] }
+diesel = { version = "0.15", features = ["sqlite", "chrono"] }
+diesel_codegen = { version = "0.15", features = ["sqlite"] }
 chrono = { version = "0.4.0", features = ["serde"] }
-r2d2 = "0.7.3"
-r2d2-diesel = "0.15.0"
+r2d2 = "0.7"
+r2d2-diesel = "0.15"
