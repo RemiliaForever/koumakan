@@ -1,7 +1,4 @@
 extern crate r2d2;
-extern crate r2d2_diesel;
-extern crate diesel;
-extern crate rocket;
 
 use r2d2_diesel::ConnectionManager;
 use diesel::sqlite::SqliteConnection;

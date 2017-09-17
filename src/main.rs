@@ -9,7 +9,6 @@ extern crate diesel_codegen;
 extern crate serde_derive;
 
 extern crate r2d2_diesel;
-extern crate r2d2;
 extern crate chrono;
 extern crate rocket;
 extern crate rocket_contrib;
@@ -35,7 +34,16 @@ fn main() {
     let server = rocket::ignite();
     let dbpool = db::init();
     server
-        .mount("/", routes![root, all])
+        .mount(
+            "/api",
+            routes![
+                get_article_list,
+                get_article,
+                get_comment,
+                get_archive,
+                get_label,
+            ],
+        )
         .catch(errors![not_found, server_error])
         .manage(dbpool)
         .launch();

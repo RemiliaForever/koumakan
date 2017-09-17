@@ -1,6 +1,3 @@
-extern crate diesel;
-extern crate chrono;
-
 use chrono::NaiveDateTime;
 
 infer_schema!("koumakan.db");
@@ -16,5 +13,18 @@ pub struct Comment {
     pub email: Option<String>,
     pub website: Option<String>,
     pub content: Option<String>,
+    pub date: Option<NaiveDateTime>,
+}
+
+#[derive(Serialize)]
+#[derive(Queryable, Insertable)]
+#[table_name = "article"]
+pub struct Aritcle {
+    pub id: Option<i32>,
+    pub title: Option<String>,
+    pub brief: Option<String>,
+    pub content: Option<String>,
+    pub typestring: Option<String>,
+    pub labels: Option<String>,
     pub date: Option<NaiveDateTime>,
 }
