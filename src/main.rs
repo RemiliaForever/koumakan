@@ -1,10 +1,14 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 
+#![recursion_limit="128"]
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;
+extern crate serde;
+#[macro_use]
+extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 
@@ -20,6 +24,10 @@ mod controller;
 use controller::*;
 
 
+#[error(400)]
+fn bad_request() -> String {
+    String::from("400")
+}
 #[error(404)]
 fn not_found() -> String {
     String::from("404")
@@ -38,13 +46,15 @@ fn main() {
             "/api",
             routes![
                 get_article_list,
-                get_article,
-                get_comment,
                 get_archive,
                 get_label,
+                get_article,
+                get_article_nav,
+                get_comment,
+                add_comment,
             ],
         )
-        .catch(errors![not_found, server_error])
+        .catch(errors![bad_request, not_found, server_error])
         .manage(dbpool)
         .launch();
 

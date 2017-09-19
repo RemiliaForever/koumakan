@@ -2,19 +2,19 @@ PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE article(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title VARCHAR(255),
-    brief VARCHAR(1024),
-    content TEXT,
-    typestring VARCHAR(255),
-    labels VARCHAR(255),
-    date DATETIME);
+    title VARCHAR(255)  NOT NULL,
+    brief VARCHAR(1024) NOT NULL,
+    content TEXT NOT NULL,
+    typestring VARCHAR(255) NOT NULL,
+    labels VARCHAR(255) NOT NULL,
+    date DATETIME NOT NULL);
 CREATE TABLE comment(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    article_id INTEGER,
-    name VARCHAR(255),
-    email VARCHAR(255),
-    website VARCHAR(255),
-    content VARCHAR(255),
-    avatar VARCHAR(255),
-    date DATETIME);
+    article_id INTEGER NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    website VARCHAR(255) NOT NULL,
+    content VARCHAR(255) NOT NULL,
+    avatar VARCHAR(255) NOT NULL,
+    date DATETIME NOT NULL);
 COMMIT;
