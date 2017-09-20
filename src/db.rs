@@ -6,7 +6,7 @@ use diesel::sqlite::SqliteConnection;
 use std::ops::Deref;
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
-use rocket::{Request, State, Outcome};
+use rocket::{Outcome, Request, State};
 
 type Pool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 

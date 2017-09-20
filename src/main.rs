@@ -6,23 +6,21 @@
 extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;
+extern crate r2d2_diesel;
 extern crate serde;
 #[macro_use]
 extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
-
-extern crate r2d2_diesel;
-extern crate chrono;
 extern crate rocket;
 extern crate rocket_contrib;
 
+extern crate chrono;
+extern crate md5;
 
 mod db;
 mod models;
 mod controller;
-use controller::*;
-
 
 #[error(400)]
 fn bad_request() -> String {
@@ -40,22 +38,11 @@ fn server_error() -> String {
 
 fn main() {
     let server = rocket::ignite();
-    let dbpool = db::init();
     server
-        .mount(
-            "/api",
-            routes![
-                get_article_list,
-                get_archive,
-                get_label,
-                get_article,
-                get_article_nav,
-                get_comment,
-                add_comment,
-            ],
-        )
+        .mount("/api", controller::get_routes())
         .catch(errors![bad_request, not_found, server_error])
-        .manage(dbpool)
+        .manage(db::init())
+        .manage(controller::init_cache())
         .launch();
 
 }

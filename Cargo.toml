@@ -15,3 +15,4 @@ diesel_codegen = { version = "0.16", features = ["sqlite"] }
 chrono = { version = "0.4.0", features = ["serde"] }
 r2d2 = "0.7"
 r2d2-diesel = "0.16"
+md5 = "0.3"
