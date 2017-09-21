@@ -11,11 +11,15 @@ use models::*;
 
 #[post("/getComments", data = "<param>")]
 fn get_comments(conn: DbConn, param: Json<HashMap<String, i32>>) -> Json<Vec<Comment>> {
-    let comments = comment::table
+    let mut comments = comment::table
         .filter(comment::article_id.eq(param["id"]))
         .order(comment::date)
         .load::<Comment>(&*conn)
-        .expect("error!");
+        .expect("error");
+    // mask user's email
+    for comment in &mut comments {
+        comment.email = String::from("")
+    }
     Json(comments)
 }
 
@@ -26,7 +30,6 @@ fn add_comment(conn: DbConn, mut cmt: Json<Comment>) {
         "https://www.gravatar.com/avatar/{:x}?d=identicon",
         md5::compute(cmt.email.trim())
     );
-    // get current datetime
     cmt.date = chrono::Local::now().naive_local();
     let _ = diesel::insert(&*cmt).into(comment::table).execute(&*conn);
 }

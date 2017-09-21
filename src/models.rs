@@ -22,7 +22,7 @@ pub struct Comment {
 #[derive(Serialize, Deserialize)]
 #[derive(Queryable, Insertable)]
 #[table_name = "article"]
-pub struct Aritcle {
+pub struct Article {
     pub id: Option<i32>,
     pub title: String,
     pub brief: String,
