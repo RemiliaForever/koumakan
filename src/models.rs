@@ -43,7 +43,7 @@ mod my_date_format {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&format!("{}", date.format(FORMAT)))
+        serializer.serialize_str(&date.format(FORMAT).to_string())
     }
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDateTime, D::Error>

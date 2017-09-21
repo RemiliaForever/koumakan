@@ -3,11 +3,8 @@ mod comment;
 mod label_archive;
 
 use rocket::Route;
-use db::DbConn;
+pub use self::label_archive::ALCache;
 
-pub fn init_cache(conn: DbConn) -> label_archive::ALCache {
-    label_archive::init_cache(conn)
-}
 
 pub fn get_routes() -> Vec<Route> {
     routes![

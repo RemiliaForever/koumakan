@@ -1,12 +1,16 @@
+use std::collections::HashMap;
+
 use diesel;
 use serde_json;
 use diesel::prelude::*;
 use rocket_contrib::Json;
-
-use std::collections::HashMap;
+use rocket::request::State;
 
 use db::DbConn;
 use models::*;
+
+use super::ALCache;
+
 
 #[post("/getArticleList", data = "<param>")]
 fn get_article_list(conn: DbConn, param: Json<HashMap<String, String>>) -> Json<Vec<Aritcle>> {
@@ -65,6 +69,7 @@ fn get_article_nav(conn: DbConn, param: Json<HashMap<String, i32>>) -> Json<serd
 }
 
 #[post("/addArticle", data = "<art>")]
-fn add_article(conn: DbConn, art: Json<Aritcle>) {
+fn add_article(conn: DbConn, cache: State<ALCache>, art: Json<Aritcle>) {
     let _ = diesel::insert(&*art).into(article::table).execute(&*conn);
+    cache.refresh_cache(&*conn);
 }

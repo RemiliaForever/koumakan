@@ -39,7 +39,7 @@ fn server_error() -> String {
 fn main() {
     let server = rocket::ignite();
     let pool = db::init();
-    let cache = controller::init_cache(db::DbConn(pool.get().unwrap()));
+    let cache = controller::ALCache::init_cache(db::DbConn(pool.get().unwrap()));
     server
         .mount("/api", controller::get_routes())
         .catch(errors![bad_request, not_found, server_error])
