@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use diesel;
 use serde_json;
-use chrono::*;
 use diesel::prelude::*;
+use rocket::http::Cookies;
 use rocket_contrib::Json;
 use rocket::request::State;
 
@@ -93,51 +93,32 @@ fn get_article(conn: DbConn, param: Json<HashMap<String, i32>>) -> Json<Article>
 
 #[post("/getArticleNav", data = "<param>")]
 fn get_article_nav(conn: DbConn, param: Json<HashMap<String, i32>>) -> Json<serde_json::Value> {
+    use diesel::result::Error;
+    fn art_to_nav(result: Result<String, Error>, art_id: i32) -> serde_json::Value {
+        match result {
+            Ok(s) => json!({"id": art_id, "title": s }),
+            _ => json!({"id": -1, "title": ""}),
+        }
+    }
+
     let current_id = param["id"];
     let art_pre: Result<String, _> = article::table
         .select(article::title)
         .find(current_id - 1)
         .first(&*conn);
-    let art_nav_pre = match art_pre {
-        Ok(s) => {
-            json!({
-                "id": current_id - 1,
-                "title": s
-            })
-        }
-        _ => {
-            json!({
-                "id": -1,
-                "title": ""
-            })
-        }
-    };
     let art_next: Result<String, _> = article::table
         .select(article::title)
         .find(current_id + 1)
         .first(&*conn);
-    let art_nav_next = match art_next {
-        Ok(s) => {
-            json!({
-                "id": current_id + 1,
-                "title": s
-            })
-        }
-        _ => {
-            json!({
-                "id": -1,
-                "title": ""
-            })
-        }
-    };
     Json(json!({
-        "pre":art_nav_pre,
-        "next":art_nav_next
+        "pre":art_to_nav(art_pre, current_id - 1),
+        "next":art_to_nav(art_next, current_id + 1)
     }))
 }
 
 #[post("/addArticle", data = "<art>")]
-fn add_article(conn: DbConn, cache: State<ALCache>, art: Json<Article>) {
+fn add_article(mut cookies: Cookies, conn: DbConn, cache: State<ALCache>, art: Json<Article>) {
+    cookies.get_private("isLogin").expect("Validate Error");
     diesel::insert(&*art)
         .into(article::table)
         .execute(&*conn)
@@ -146,10 +127,28 @@ fn add_article(conn: DbConn, cache: State<ALCache>, art: Json<Article>) {
 }
 
 #[post("/updateArticle", data = "<art>")]
-fn update_article(conn: DbConn, cache: State<ALCache>, art: Json<Article>) {
-    diesel::insert(&*art)
-        .into(article::table)
+fn update_article(mut cookies: Cookies, conn: DbConn, cache: State<ALCache>, art: Json<Article>) {
+    cookies.get_private("isLogin").expect("Validate Error");
+    diesel::update(article::table.filter(article::id.eq(art.id)))
+        .set((
+            article::title.eq(&art.title),
+            article::brief.eq(&art.brief),
+            article::content.eq(&art.content),
+            article::typestring.eq(&art.typestring),
+            article::labels.eq(&art.labels),
+            article::date.eq(&art.date),
+        ))
         .execute(&*conn)
-        .expect("insert error");
+        .expect("update error");
+    cache.refresh_cache(&*conn);
+}
+
+#[post("/deleteArticle", data = "<param>")]
+fn delete_article(mut cookies: Cookies, conn: DbConn, cache: State<ALCache>, param: String) {
+    cookies.get_private("isLogin").expect("Validate Error");
+    let id = param.parse::<i32>().expect("wrong parameter");
+    diesel::delete(article::table.filter(article::id.eq(id)))
+        .execute(&*conn)
+        .expect("delete error");
     cache.refresh_cache(&*conn);
 }

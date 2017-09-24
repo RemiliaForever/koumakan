@@ -1,6 +1,7 @@
 mod article;
 mod comment;
 mod label_archive;
+mod user;
 
 use rocket::Route;
 pub use self::label_archive::ALCache;
@@ -23,7 +24,9 @@ pub fn get_routes() -> Vec<Route> {
         article::get_article_nav,
         article::add_article,
         article::update_article,
+        article::delete_article,
         comment::get_comments,
         comment::add_comment,
+        user::login,
     ]
 }
