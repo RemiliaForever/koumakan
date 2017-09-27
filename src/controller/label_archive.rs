@@ -1,5 +1,5 @@
 use std::sync::RwLock;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use rocket::State;
 use rocket_contrib::Json;
@@ -10,15 +10,15 @@ use models::*;
 use db::DbConn;
 
 pub struct ALCache {
-    archives: RwLock<HashMap<String, i32>>,
-    labels: RwLock<HashMap<String, i32>>,
+    archives: RwLock<BTreeMap<String, i32>>,
+    labels: RwLock<BTreeMap<String, i32>>,
 }
 
 impl ALCache {
     pub fn init_cache(conn: DbConn) -> ALCache {
         let cache = ALCache {
-            archives: RwLock::new(HashMap::new()),
-            labels: RwLock::new(HashMap::new()),
+            archives: RwLock::new(BTreeMap::new()),
+            labels: RwLock::new(BTreeMap::new()),
         };
         cache.refresh_cache(&*conn);
         cache
@@ -29,8 +29,8 @@ impl ALCache {
             .select((article::labels, article::date))
             .load(conn)
             .expect("error");
-        let labels: &mut HashMap<String, i32> = &mut *self.labels.write().unwrap();
-        let archives: &mut HashMap<String, i32> = &mut *self.archives.write().unwrap();
+        let labels: &mut BTreeMap<String, i32> = &mut *self.labels.write().unwrap();
+        let archives: &mut BTreeMap<String, i32> = &mut *self.archives.write().unwrap();
         labels.clear();
         archives.clear();
         for (article_labels, article_date) in result {
@@ -49,11 +49,11 @@ impl ALCache {
 
 
 #[post("/getArchive")]
-fn get_archive(cache: State<ALCache>) -> Json<HashMap<String, i32>> {
+fn get_archive(cache: State<ALCache>) -> Json<BTreeMap<String, i32>> {
     Json(cache.archives.read().unwrap().clone())
 }
 
 #[post("/getLabel")]
-fn get_label(cache: State<ALCache>) -> Json<HashMap<String, i32>> {
+fn get_label(cache: State<ALCache>) -> Json<BTreeMap<String, i32>> {
     Json(cache.labels.read().unwrap().clone())
 }

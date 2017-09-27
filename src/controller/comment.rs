@@ -10,9 +10,10 @@ use db::DbConn;
 use models::*;
 
 #[post("/getComments", data = "<param>")]
-fn get_comments(conn: DbConn, param: Json<HashMap<String, i32>>) -> Json<Vec<Comment>> {
+fn get_comments(conn: DbConn, param: Json<HashMap<String, String>>) -> Json<Vec<Comment>> {
+    let id = param["id"].parse::<i32>().expect("error");
     let mut comments = comment::table
-        .filter(comment::article_id.eq(param["id"]))
+        .filter(comment::article_id.eq(id))
         .order(comment::date)
         .load::<Comment>(&*conn)
         .expect("error");
@@ -24,12 +25,13 @@ fn get_comments(conn: DbConn, param: Json<HashMap<String, i32>>) -> Json<Vec<Com
 }
 
 #[post("/addComment", data = "<cmt>")]
-fn add_comment(conn: DbConn, mut cmt: Json<Comment>) {
+fn add_comment(conn: DbConn, mut cmt: Json<Comment>) -> Json<&'static str> {
     // caculate avatar
     cmt.avatar = format!(
-        "https://www.gravatar.com/avatar/{:x}?d=identicon",
+        "https://www.gravatar.com/avatar/{:x}?s=56d=identicon",
         md5::compute(cmt.email.trim())
     );
     cmt.date = chrono::Local::now().naive_local();
     let _ = diesel::insert(&*cmt).into(comment::table).execute(&*conn);
+    Json("finished")
 }

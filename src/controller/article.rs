@@ -6,6 +6,7 @@ use diesel::prelude::*;
 use rocket::http::Cookies;
 use rocket_contrib::Json;
 use rocket::request::State;
+use chrono::Local;
 
 use db::DbConn;
 use models::*;
@@ -86,22 +87,33 @@ fn get_article_list(conn: DbConn, param: Json<HashMap<String, String>>) -> Json<
 }
 
 #[post("/getArticle", data = "<param>")]
-fn get_article(conn: DbConn, param: Json<HashMap<String, i32>>) -> Json<Article> {
-    let article = article::table.find(param["id"]).first(&*conn);
-    Json(article.expect("error"))
+fn get_article(conn: DbConn, param: Json<HashMap<String, String>>) -> Json<Article> {
+    let article = match param["id"].parse::<i32>() {
+        Ok(id) => article::table.find(id).first(&*conn).expect("error"),
+        Err(_) => Article {
+            id: Some(-1),
+            title: String::default(),
+            brief: String::default(),
+            typestring: String::default(),
+            labels: String::default(),
+            content: String::default(),
+            date: Local::now().naive_local(),
+        },
+    };
+    Json(article)
 }
 
 #[post("/getArticleNav", data = "<param>")]
-fn get_article_nav(conn: DbConn, param: Json<HashMap<String, i32>>) -> Json<serde_json::Value> {
+fn get_article_nav(conn: DbConn, param: Json<HashMap<String, String>>) -> Json<serde_json::Value> {
     use diesel::result::Error;
     fn art_to_nav(result: Result<String, Error>, art_id: i32) -> serde_json::Value {
         match result {
             Ok(s) => json!({"id": art_id, "title": s }),
-            _ => json!({"id": -1, "title": ""}),
+            _ => json!({"id": -1, "title": "没有了"}),
         }
     }
 
-    let current_id = param["id"];
+    let current_id = param["id"].parse::<i32>().expect("error");
     let art_pre: Result<String, _> = article::table
         .select(article::title)
         .find(current_id - 1)
