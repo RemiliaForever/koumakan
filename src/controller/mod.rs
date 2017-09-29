@@ -15,7 +15,7 @@ fn get_or_null(param: &Json<HashMap<String, String>>, key: &str) -> String {
     }
 }
 
-pub fn get_routes() -> Vec<Route> {
+pub fn get_api_routes() -> Vec<Route> {
     routes![
         label_archive::get_archive,
         label_archive::get_label,
@@ -29,4 +29,8 @@ pub fn get_routes() -> Vec<Route> {
         comment::add_comment,
         user::login,
     ]
+}
+
+pub fn get_root_routes() -> Vec<Route> {
+    routes![label_archive::rss]
 }

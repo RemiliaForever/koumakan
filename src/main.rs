@@ -17,6 +17,7 @@ extern crate rocket_contrib;
 
 extern crate chrono;
 extern crate md5;
+extern crate rss;
 
 mod db;
 mod models;
@@ -43,7 +44,8 @@ fn main() {
     let pool = db::init();
     let cache = controller::ALCache::init_cache(db::DbConn(pool.get().unwrap()));
     server
-        .mount("/api", controller::get_routes())
+        .mount("/api", controller::get_api_routes())
+        .mount("/", controller::get_root_routes())
         .catch(errors![bad_request, not_found, server_error])
         .attach(AdHoc::on_attach(|server| {
             let token = String::from(server.config().get_str("token").unwrap());
