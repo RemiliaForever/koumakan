@@ -2,6 +2,7 @@ use md5;
 use chrono;
 use diesel;
 use diesel::prelude::*;
+use rocket;
 use rocket_contrib::Json;
 
 use std::collections::HashMap;
@@ -9,11 +10,10 @@ use std::collections::HashMap;
 use db::DbConn;
 use models::*;
 
-#[post("/getComments", data = "<param>")]
-fn get_comments(conn: DbConn, param: Json<HashMap<String, String>>) -> Json<Vec<Comment>> {
-    let id = param["id"].parse::<i32>().expect("error");
+#[get("/comments/aid/<aid>")]
+fn get_comments(conn: DbConn, aid: i32) -> Json<Vec<Comment>> {
     let mut comments = comment::table
-        .filter(comment::article_id.eq(id))
+        .filter(comment::article_id.eq(aid))
         .order(comment::date)
         .load::<Comment>(&*conn)
         .expect("error");
@@ -24,8 +24,8 @@ fn get_comments(conn: DbConn, param: Json<HashMap<String, String>>) -> Json<Vec<
     Json(comments)
 }
 
-#[post("/addComment", data = "<cmt>")]
-fn add_comment(conn: DbConn, mut cmt: Json<Comment>) -> Json<&'static str> {
+#[post("/comments", data = "<cmt>")]
+fn add_comment(conn: DbConn, mut cmt: Json<Comment>) -> rocket::response::status::NoContent {
     // caculate avatar
     cmt.avatar = format!(
         "https://www.gravatar.com/avatar/{:x}?s=56d=identicon",
@@ -33,5 +33,5 @@ fn add_comment(conn: DbConn, mut cmt: Json<Comment>) -> Json<&'static str> {
     );
     cmt.date = chrono::Local::now().naive_local();
     let _ = diesel::insert(&*cmt).into(comment::table).execute(&*conn);
-    Json("finished")
+    rocket::response::status::NoContent {}
 }

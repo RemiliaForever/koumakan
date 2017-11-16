@@ -27,7 +27,7 @@ pub struct Article {
     pub title: String,
     pub brief: String,
     pub content: String,
-    pub typestring: String,
+    pub catagory: String,
     pub labels: String,
     #[serde(with = "my_date_format")]
     pub date: NaiveDateTime,

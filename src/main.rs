@@ -1,4 +1,4 @@
-#![feature(plugin)]
+#![feature(plugin, custom_derive)]
 #![plugin(rocket_codegen)]
 
 #![recursion_limit="128"]
@@ -23,20 +23,6 @@ mod db;
 mod models;
 mod controller;
 
-#[error(400)]
-fn bad_request() -> &'static str {
-    "400"
-}
-#[error(404)]
-fn not_found() -> &'static str {
-    "404"
-}
-
-#[error(500)]
-fn server_error() -> &'static str {
-    "500"
-}
-
 fn main() {
     use rocket::fairing::AdHoc;
 
@@ -44,9 +30,7 @@ fn main() {
     let pool = db::init();
     let cache = controller::ALCache::init_cache(db::DbConn(pool.get().unwrap()));
     server
-        .mount("/api", controller::get_api_routes())
-        .mount("/", controller::get_root_routes())
-        .catch(errors![bad_request, not_found, server_error])
+        .mount("/", controller::get_routes())
         .attach(AdHoc::on_attach(|server| {
             let token = String::from(server.config().get_str("token").unwrap());
             Ok(server.manage(token))
