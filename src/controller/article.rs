@@ -82,9 +82,9 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
     let query = match param.filter {
         Some(s) => {
             match s.as_ref() {
-                "catagory" => {
+                "category" => {
                     article::table
-                        .filter(article::catagory.eq(value))
+                        .filter(article::category.eq(value))
                         .order(article::date)
                         .limit(pagesize)
                         .offset(offset)
@@ -93,7 +93,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                 "labels" => {
                     article::table
                         .filter(
-                            article::catagory
+                            article::category
                                 .concat(",")
                                 .concat(article::labels)
                                 .concat(",")
@@ -123,7 +123,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                             article::title
                                 .like(format!("%{}%", value))
                                 .or(article::brief.like(format!("%{}%", value)))
-                                .or(article::catagory.like(format!("%{}%", value)))
+                                .or(article::category.like(format!("%{}%", value)))
                                 .or(article::labels.like(format!("%{}%", value))),
                         )
                         .order(article::date)
@@ -180,7 +180,7 @@ fn put_article(
             article::title.eq(&article.title),
             article::brief.eq(&article.brief),
             article::content.eq(&article.content),
-            article::catagory.eq(&article.catagory),
+            article::category.eq(&article.category),
             article::labels.eq(&article.labels),
             article::date.eq(&article.date),
         ))
