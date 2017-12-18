@@ -33,8 +33,8 @@ fn post_comments(conn: DbConn, mut cmt: Json<Comment>) {
         md5::compute(cmt.email.trim())
     );
     cmt.date = chrono::Local::now().naive_local();
-    diesel::insert(&*cmt)
-        .into(comment::table)
+    diesel::insert_into(comment::table)
+        .values(&*cmt)
         .execute(&*conn)
         .expect("insert error");
 }

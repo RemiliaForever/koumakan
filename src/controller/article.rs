@@ -159,8 +159,8 @@ fn post_article(
 ) {
     cookies.get_private("isLogin").expect("Validate Error");
     article.date = Local::now().naive_local();
-    diesel::insert(&*article)
-        .into(article::table)
+    diesel::insert_into(article::table)
+        .values(&*article)
         .execute(&*conn)
         .expect("insert error");
     cache.refresh_cache(&*conn);

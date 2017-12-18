@@ -19,7 +19,8 @@ pub fn get_routes() -> Vec<Route> {
         comment::post_comments,
         label_archive::get_label,
         label_archive::get_archive,
-        label_archive::rss,
+        label_archive::rss_feed,
+        label_archive::rss_full,
         user::login,
     ]
 }
