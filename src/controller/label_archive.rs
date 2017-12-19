@@ -108,12 +108,12 @@ fn get_label(cache: State<ALCache>) -> Json<BTreeMap<String, i32>> {
     Json(cache.labels.read().unwrap().clone())
 }
 
-#[get("/rss.feed")]
+#[get("/rss/feed")]
 fn rss_feed(cache: State<ALCache>) -> Xml<String> {
     Xml(cache.rss_feed.read().unwrap().to_string())
 }
 
-#[get("/rss.full")]
+#[get("/rss/full")]
 fn rss_full(cache: State<ALCache>) -> Xml<String> {
     Xml(cache.rss_fulltext.read().unwrap().to_string())
 }
