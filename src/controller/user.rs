@@ -10,3 +10,8 @@ fn login(mut cookies: Cookies, token: State<String>, pass: String) -> &'static s
         "Validate Error"
     }
 }
+
+#[get("/login")]
+fn check_login(mut cookies: Cookies) {
+    cookies.get_private("isLogin").expect("Validate Error");
+}

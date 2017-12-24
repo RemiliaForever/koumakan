@@ -15,12 +15,9 @@ fn get_comments(mut cookies: Cookies, conn: DbConn, aid: i32) -> Json<Vec<Commen
         .order(comment::date)
         .load::<Comment>(&*conn)
         .expect("error");
-
-    if let None = cookies.get_private("isLogin") {
-        // mask user's email
-        for comment in &mut comments {
-            comment.email = String::from("")
-        }
+    // mask user's email
+    for comment in &mut comments {
+        comment.email = String::from("")
     }
     Json(comments)
 }

@@ -22,5 +22,6 @@ pub fn get_routes() -> Vec<Route> {
         label_archive::rss_feed,
         label_archive::rss_full,
         user::login,
+        user::check_login,
     ]
 }

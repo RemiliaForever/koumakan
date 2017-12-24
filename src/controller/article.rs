@@ -90,7 +90,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                         .offset(offset)
                         .load::<Article>(&*conn)
                 }
-                "labels" => {
+                "label" => {
                     article::table
                         .filter(
                             article::category
@@ -156,7 +156,7 @@ fn post_article(
     conn: DbConn,
     cache: State<ALCache>,
     mut article: Json<Article>,
-) {
+) -> &'static str {
     cookies.get_private("isLogin").expect("Validate Error");
     article.date = Local::now().naive_local();
     diesel::insert_into(article::table)
@@ -164,6 +164,7 @@ fn post_article(
         .execute(&*conn)
         .expect("insert error");
     cache.refresh_cache(&*conn);
+    "Success"
 }
 
 #[put("/articles", data = "<article>")]
@@ -172,7 +173,7 @@ fn put_article(
     conn: DbConn,
     cache: State<ALCache>,
     mut article: Json<Article>,
-) {
+) -> &'static str {
     cookies.get_private("isLogin").expect("Validate Error");
     article.date = Local::now().naive_local();
     diesel::update(article::table.filter(article::id.eq(article.id)))
@@ -187,13 +188,20 @@ fn put_article(
         .execute(&*conn)
         .expect("update error");
     cache.refresh_cache(&*conn);
+    "Success"
 }
 
 #[delete("/articles/<id>")]
-fn delete_article(mut cookies: Cookies, conn: DbConn, cache: State<ALCache>, id: i32) {
+fn delete_article(
+    mut cookies: Cookies,
+    conn: DbConn,
+    cache: State<ALCache>,
+    id: i32,
+) -> &'static str {
     cookies.get_private("isLogin").expect("Validate Error");
     diesel::delete(article::table.filter(article::id.eq(id)))
         .execute(&*conn)
         .expect("delete error");
     cache.refresh_cache(&*conn);
+    "Success"
 }
