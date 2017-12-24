@@ -35,6 +35,12 @@ fn main() {
             let token = String::from(server.config().get_str("token").unwrap());
             Ok(server.manage(token))
         }))
+        .attach(AdHoc::on_attach(|server| {
+            let domain = String::from(server.config().get_str("damain").unwrap());
+            let username = String::from(server.config().get_str("username").unwrap());
+            let password = String::from(server.config().get_str("password").unwrap());
+            server.manage(domain).manage(username).manager(password)
+        }))
         .manage(pool)
         .manage(cache)
         .launch();

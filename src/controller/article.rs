@@ -52,17 +52,7 @@ struct ArticleQueryParam {
 
 #[get("/articles")]
 fn get_article_list_default(conn: DbConn) -> Json<Vec<Article>> {
-    let query = article::table
-        .order(article::date)
-        .limit(10)
-        .offset(0)
-        .load::<Article>(&*conn);
-    let mut result = query.expect("error");
-    // mask content
-    for a in &mut result {
-        a.content = String::from("")
-    }
-    Json(result)
+    get_article_list(conn, ArticleQueryParam::default())
 }
 
 #[get("/articles?<param>")]
@@ -85,6 +75,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                 "category" => {
                     article::table
                         .filter(article::category.eq(value))
+                        .filter(article::id.gt(20000))
                         .order(article::date)
                         .limit(pagesize)
                         .offset(offset)
@@ -99,6 +90,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                                 .concat(",")
                                 .like(format!("%,{},%", value)),
                         )
+                        .filter(article::id.gt(20000))
                         .order(article::date)
                         .limit(pagesize)
                         .offset(offset)
@@ -112,6 +104,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                         .filter(article::date.ge(format!("{:04}-{:02}", year, month)).and(
                             article::date.lt(format!("{:04}-{:02}", year, month + 1)),
                         ))
+                        .filter(article::id.gt(20000))
                         .order(article::date)
                         .limit(pagesize)
                         .offset(offset)
@@ -126,6 +119,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                                 .or(article::category.like(format!("%{}%", value)))
                                 .or(article::labels.like(format!("%{}%", value))),
                         )
+                        .filter(article::id.gt(20000))
                         .order(article::date)
                         .limit(pagesize)
                         .offset(offset)
@@ -136,6 +130,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
         }
         _ => {
             article::table
+                .filter(article::id.gt(20000))
                 .order(article::date)
                 .limit(pagesize)
                 .offset(offset)
@@ -145,6 +140,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
     let mut result = query.expect("error");
     // mask content
     for a in &mut result {
+
         a.content = String::from("")
     }
     Json(result)

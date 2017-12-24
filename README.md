@@ -9,6 +9,7 @@ frontend: [koumakan-frontend](https://github.com/RemiliaForever/koumakan-fronten
 * ConnectionPool: r2d2
 * ORM: diesel
 * Web: rocket
+* SMTP: lettre
 
 ## Building Instructions
 Build with cargo and rust nightly version.

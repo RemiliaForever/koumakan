@@ -9,7 +9,7 @@ use db::DbConn;
 use models::*;
 
 #[get("/comments/<aid>")]
-fn get_comments(mut cookies: Cookies, conn: DbConn, aid: i32) -> Json<Vec<Comment>> {
+fn get_comments(conn: DbConn, aid: i32) -> Json<Vec<Comment>> {
     let mut comments = comment::table
         .filter(comment::article_id.eq(aid))
         .order(comment::date)

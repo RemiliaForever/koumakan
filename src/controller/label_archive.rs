@@ -49,8 +49,11 @@ impl ALCache {
 
         let rss_feed: &mut Channel = &mut *self.rss_feed.write().unwrap();
         let rss_fulltext: &mut Channel = &mut *self.rss_fulltext.write().unwrap();
-
-        let result: Vec<Article> = article::table.load(conn).expect("error");
+        // less 20000 for help page
+        let result: Vec<Article> = article::table
+            .filter(aritcle::id.gt(20000))
+            .load(conn)
+            .expect("error");
         let mut feed_items = Vec::new();
         let mut fulltext_items = Vec::new();
         for article in result {
