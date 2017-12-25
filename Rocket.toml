@@ -6,6 +6,3 @@ workers = 3
 log = "normal"
 
 token = "test"
-domain = "smtp.domain.com"
-username = "username"
-password = "password"

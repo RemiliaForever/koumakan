@@ -51,7 +51,7 @@ impl ALCache {
         let rss_fulltext: &mut Channel = &mut *self.rss_fulltext.write().unwrap();
         // less 20000 for help page
         let result: Vec<Article> = article::table
-            .filter(aritcle::id.gt(20000))
+            .filter(article::id.gt(20000))
             .load(conn)
             .expect("error");
         let mut feed_items = Vec::new();
@@ -83,7 +83,7 @@ impl ALCache {
             item_builder.set_description(article.brief.clone());
             feed_items.push(item_builder.clone());
             item_builder.set_description(format!(
-                "<p>{}</p>{}",
+                "{}\n\n{}",
                 article.brief,
                 article.content
             ));

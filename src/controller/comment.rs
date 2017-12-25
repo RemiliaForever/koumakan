@@ -3,7 +3,8 @@ use chrono;
 use diesel;
 use diesel::prelude::*;
 use rocket_contrib::Json;
-use rocket::http::Cookies;
+use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
+use lettre::SendmailTransport;
 
 use db::DbConn;
 use models::*;
@@ -34,4 +35,30 @@ fn post_comments(conn: DbConn, mut cmt: Json<Comment>) {
         .values(&*cmt)
         .execute(&*conn)
         .expect("insert error");
+    // send email
+    let domain = "koumakan.cc";
+    let username = "remilia";
+    let email = SimpleSendableEmail::new(
+        EmailAddress::new(format!("Blog Notify <notify@{}>", domain)),
+        vec![EmailAddress::new(format!("{}@{}", username, domain))],
+        "New comment from blog".to_string(),
+        format!(
+            "You got one new comment.\n\n\
+            article: https://blog.koumakan.cc/article/{}\n\n\
+            comment: on {}\n\
+            \tname: {}\n\
+            \temail: {}\n\
+            \twebsite: {}\n\
+            \tcontent: {}\n\
+            \n",
+            cmt.article_id,
+            cmt.date,
+            cmt.name,
+            cmt.email,
+            cmt.website,
+            cmt.content
+        ),
+    );
+    let mut sender = SendmailTransport::new();
+    println!("Send mail: {:?}", sender.send(&email));
 }

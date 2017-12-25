@@ -42,6 +42,7 @@ fn get_article_nav(conn: DbConn, id: i32) -> Json<serde_json::Value> {
     }))
 }
 
+#[derive(Default)]
 #[derive(FromForm)]
 struct ArticleQueryParam {
     filter: Option<String>,
@@ -76,7 +77,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                     article::table
                         .filter(article::category.eq(value))
                         .filter(article::id.gt(20000))
-                        .order(article::date)
+                        .order(article::date.desc())
                         .limit(pagesize)
                         .offset(offset)
                         .load::<Article>(&*conn)
@@ -91,7 +92,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                                 .like(format!("%,{},%", value)),
                         )
                         .filter(article::id.gt(20000))
-                        .order(article::date)
+                        .order(article::date.desc())
                         .limit(pagesize)
                         .offset(offset)
                         .load::<Article>(&*conn)
@@ -105,7 +106,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                             article::date.lt(format!("{:04}-{:02}", year, month + 1)),
                         ))
                         .filter(article::id.gt(20000))
-                        .order(article::date)
+                        .order(article::date.desc())
                         .limit(pagesize)
                         .offset(offset)
                         .load::<Article>(&*conn)
@@ -120,7 +121,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                                 .or(article::labels.like(format!("%{}%", value))),
                         )
                         .filter(article::id.gt(20000))
-                        .order(article::date)
+                        .order(article::date.desc())
                         .limit(pagesize)
                         .offset(offset)
                         .load::<Article>(&*conn)
@@ -131,7 +132,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
         _ => {
             article::table
                 .filter(article::id.gt(20000))
-                .order(article::date)
+                .order(article::date.desc())
                 .limit(pagesize)
                 .offset(offset)
                 .load::<Article>(&*conn)
