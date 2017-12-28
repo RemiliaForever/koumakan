@@ -52,6 +52,7 @@ impl ALCache {
         // less 20000 for help page
         let result: Vec<Article> = article::table
             .filter(article::id.gt(20000))
+            .order(article::date.desc())
             .load(conn)
             .expect("error");
         let mut feed_items = Vec::new();
