@@ -83,11 +83,7 @@ impl ALCache {
                 .unwrap();
             item_builder.set_description(article.brief.clone());
             feed_items.push(item_builder.clone());
-            item_builder.set_description(format!(
-                "{}\n\n{}",
-                article.brief,
-                article.content
-            ));
+            item_builder.set_description(format!("{}\n\n{}", article.brief, article.content));
             fulltext_items.push(item_builder);
         }
         let date = Local::now().to_rfc2822();
@@ -99,8 +95,6 @@ impl ALCache {
         rss_fulltext.set_last_build_date(date.clone());
     }
 }
-
-
 
 #[get("/archive")]
 fn get_archive(cache: State<ALCache>) -> Json<BTreeMap<String, i32>> {

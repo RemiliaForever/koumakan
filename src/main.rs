@@ -1,24 +1,24 @@
 #![feature(plugin, custom_derive)]
 #![plugin(rocket_codegen)]
+#![recursion_limit = "128"]
 
-#![recursion_limit="128"]
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_infer_schema;
 extern crate r2d2_diesel;
-extern crate serde;
-#[macro_use]
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
 extern crate rocket;
 extern crate rocket_contrib;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate serde_json;
 
 extern crate chrono;
+extern crate lettre;
 extern crate md5;
 extern crate rss;
-extern crate lettre;
 
 mod db;
 mod models;

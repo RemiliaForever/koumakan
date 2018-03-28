@@ -71,77 +71,68 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
         None => 0,
     };
     let query = match param.filter {
-        Some(s) => {
-            match s.as_ref() {
-                "category" => {
-                    article::table
-                        .filter(article::category.eq(value))
-                        .filter(article::id.gt(20000))
-                        .order(article::date.desc())
-                        .limit(pagesize)
-                        .offset(offset)
-                        .load::<Article>(&*conn)
-                }
-                "label" => {
-                    article::table
-                        .filter(
-                            article::category
-                                .concat(",")
-                                .concat(article::labels)
-                                .concat(",")
-                                .like(format!("%,{},%", value)),
-                        )
-                        .filter(article::id.gt(20000))
-                        .order(article::date.desc())
-                        .limit(pagesize)
-                        .offset(offset)
-                        .load::<Article>(&*conn)
-                }
-                "archive" => {
-                    let date: Vec<&str> = value.split("-").collect();
-                    let year = date[0].parse::<u32>().unwrap_or(2000);
-                    let month = date[1].parse::<u32>().unwrap_or(1);
-                    article::table
-                        .filter(article::date.ge(format!("{:04}-{:02}", year, month)).and(
-                            article::date.lt(format!("{:04}-{:02}", year, month + 1)),
-                        ))
-                        .filter(article::id.gt(20000))
-                        .order(article::date.desc())
-                        .limit(pagesize)
-                        .offset(offset)
-                        .load::<Article>(&*conn)
-                }
-                "search" => {
-                    article::table
-                        .filter(
-                            article::title
-                                .like(format!("%{}%", value))
-                                .or(article::brief.like(format!("%{}%", value)))
-                                .or(article::category.like(format!("%{}%", value)))
-                                .or(article::labels.like(format!("%{}%", value))),
-                        )
-                        .filter(article::id.gt(20000))
-                        .order(article::date.desc())
-                        .limit(pagesize)
-                        .offset(offset)
-                        .load::<Article>(&*conn)
-                }
-                _ => panic!("error typestring"),
-            }
-        }
-        _ => {
-            article::table
+        Some(s) => match s.as_ref() {
+            "category" => article::table
+                .filter(article::category.eq(value))
                 .filter(article::id.gt(20000))
                 .order(article::date.desc())
                 .limit(pagesize)
                 .offset(offset)
-                .load::<Article>(&*conn)
-        }
+                .load::<Article>(&*conn),
+            "label" => article::table
+                .filter(
+                    article::category
+                        .concat(",")
+                        .concat(article::labels)
+                        .concat(",")
+                        .like(format!("%,{},%", value)),
+                )
+                .filter(article::id.gt(20000))
+                .order(article::date.desc())
+                .limit(pagesize)
+                .offset(offset)
+                .load::<Article>(&*conn),
+            "archive" => {
+                let date: Vec<&str> = value.split("-").collect();
+                let year = date[0].parse::<u32>().unwrap_or(2000);
+                let month = date[1].parse::<u32>().unwrap_or(1);
+                article::table
+                    .filter(
+                        article::date
+                            .ge(format!("{:04}-{:02}", year, month))
+                            .and(article::date.lt(format!("{:04}-{:02}", year, month + 1))),
+                    )
+                    .filter(article::id.gt(20000))
+                    .order(article::date.desc())
+                    .limit(pagesize)
+                    .offset(offset)
+                    .load::<Article>(&*conn)
+            }
+            "search" => article::table
+                .filter(
+                    article::title
+                        .like(format!("%{}%", value))
+                        .or(article::brief.like(format!("%{}%", value)))
+                        .or(article::category.like(format!("%{}%", value)))
+                        .or(article::labels.like(format!("%{}%", value))),
+                )
+                .filter(article::id.gt(20000))
+                .order(article::date.desc())
+                .limit(pagesize)
+                .offset(offset)
+                .load::<Article>(&*conn),
+            _ => panic!("error typestring"),
+        },
+        _ => article::table
+            .filter(article::id.gt(20000))
+            .order(article::date.desc())
+            .limit(pagesize)
+            .offset(offset)
+            .load::<Article>(&*conn),
     };
     let mut result = query.expect("error");
     // mask content
     for a in &mut result {
-
         a.content = String::from("")
     }
     Json(result)
@@ -169,10 +160,10 @@ fn put_article(
     mut cookies: Cookies,
     conn: DbConn,
     cache: State<ALCache>,
-    mut article: Json<Article>,
+    article: Json<Article>,
 ) -> &'static str {
     cookies.get_private("isLogin").expect("Validate Error");
-    article.date = Local::now().naive_local();
+    // article.date = Local::now().naive_local();
     diesel::update(article::table.filter(article::id.eq(article.id)))
         .set((
             article::title.eq(&article.title),

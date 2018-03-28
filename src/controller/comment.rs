@@ -44,19 +44,14 @@ fn post_comments(conn: DbConn, mut cmt: Json<Comment>) {
         "New comment from blog".to_string(),
         format!(
             "You got one new comment.\n\n\
-            article: https://blog.koumakan.cc/article/{}\n\n\
-            comment: on {}\n\
-            \tname: {}\n\
-            \temail: {}\n\
-            \twebsite: {}\n\
-            \tcontent: {}\n\
-            \n",
-            cmt.article_id,
-            cmt.date,
-            cmt.name,
-            cmt.email,
-            cmt.website,
-            cmt.content
+             article: https://blog.koumakan.cc/article/{}\n\n\
+             comment: on {}\n\
+             \tname: {}\n\
+             \temail: {}\n\
+             \twebsite: {}\n\
+             \tcontent: {}\n\
+             \n",
+            cmt.article_id, cmt.date, cmt.name, cmt.email, cmt.website, cmt.content
         ),
     );
     let mut sender = SendmailTransport::new();
