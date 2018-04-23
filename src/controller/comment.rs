@@ -3,8 +3,8 @@ use chrono;
 use diesel;
 use diesel::prelude::*;
 use rocket_contrib::Json;
-use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
-use lettre::SendmailTransport;
+use lettre::{EmailTransport, SmtpTransport};
+use lettre_email::EmailBuilder;
 
 use db::DbConn;
 use models::*;
@@ -35,14 +35,18 @@ fn post_comments(conn: DbConn, mut cmt: Json<Comment>) {
         .values(&*cmt)
         .execute(&*conn)
         .expect("insert error");
+    println!("Send mail: {:?}", send_email(cmt.0));
+}
+
+fn send_email(cmt: Comment) -> Result<String, String> {
     // send email
     let domain = "koumakan.cc";
     let username = "remilia";
-    let email = SimpleSendableEmail::new(
-        EmailAddress::new(format!("Blog Notify <notify@{}>", domain)),
-        vec![EmailAddress::new(format!("{}@{}", username, domain))],
-        "New comment from blog".to_string(),
-        format!(
+    let email = EmailBuilder::new()
+        .from((format!("notify@{}", domain), "Blog Notifier"))
+        .to(format!("{}@{}", username, domain))
+        .subject("New comment from blog".to_string())
+        .text(format!(
             "You got one new comment.\n\n\
              article: https://blog.koumakan.cc/article/{}\n\n\
              comment: on {}\n\
@@ -52,8 +56,14 @@ fn post_comments(conn: DbConn, mut cmt: Json<Comment>) {
              \tcontent: {}\n\
              \n",
             cmt.article_id, cmt.date, cmt.name, cmt.email, cmt.website, cmt.content
-        ),
-    );
-    let mut sender = SendmailTransport::new();
-    println!("Send mail: {:?}", sender.send(&email));
+        ))
+        .build()
+        .map_err(|e| format!("build email error: {}", e))?;
+    let sender = SmtpTransport::builder_unencrypted_localhost()
+        .map_err(|e| format!("resolve server error: {}", e))?;
+    sender
+        .build()
+        .send(&email)
+        .map(|e| format!("smtp server response: {:?}", e))
+        .map_err(|e| format!("smtp server error: {}", e))
 }

@@ -17,6 +17,7 @@ extern crate serde_json;
 
 extern crate chrono;
 extern crate lettre;
+extern crate lettre_email;
 extern crate md5;
 extern crate rss;
 
