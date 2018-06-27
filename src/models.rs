@@ -1,6 +1,5 @@
 use chrono::NaiveDateTime;
-
-infer_schema!("koumakan.db");
+pub use schema::*;
 
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]

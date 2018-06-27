@@ -1,10 +1,10 @@
-use md5;
 use chrono;
 use diesel;
 use diesel::prelude::*;
-use rocket_contrib::Json;
 use lettre::{EmailTransport, SmtpTransport};
 use lettre_email::EmailBuilder;
+use md5;
+use rocket_contrib::Json;
 
 use db::DbConn;
 use models::*;
@@ -18,7 +18,7 @@ fn get_comments(conn: DbConn, aid: i32) -> Json<Vec<Comment>> {
         .expect("error");
     // mask user's email
     for comment in &mut comments {
-        comment.email = String::from("")
+        comment.email = String::from("");
     }
     Json(comments)
 }

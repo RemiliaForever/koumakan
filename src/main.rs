@@ -4,8 +4,6 @@
 
 #[macro_use]
 extern crate diesel;
-#[macro_use]
-extern crate diesel_infer_schema;
 extern crate r2d2_diesel;
 extern crate rocket;
 extern crate rocket_contrib;
@@ -21,9 +19,10 @@ extern crate lettre_email;
 extern crate md5;
 extern crate rss;
 
+mod controller;
 mod db;
 mod models;
-mod controller;
+mod schema;
 
 fn main() {
     use rocket::fairing::AdHoc;

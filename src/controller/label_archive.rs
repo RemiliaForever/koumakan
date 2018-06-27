@@ -37,11 +37,11 @@ impl ALCache {
             rss_feed: RwLock::new(rss_builder.clone()),
             rss_fulltext: RwLock::new(rss_builder.clone()),
         };
-        cache.refresh_cache(&*conn);
+        cache.refresh_cache(conn);
         cache
     }
 
-    pub fn refresh_cache(&self, conn: &SqliteConnection) {
+    pub fn refresh_cache(&self, conn: DbConn) {
         let labels: &mut BTreeMap<String, i32> = &mut *self.labels.write().unwrap();
         let archives: &mut BTreeMap<String, i32> = &mut *self.archives.write().unwrap();
         labels.clear();
@@ -53,7 +53,7 @@ impl ALCache {
         let result: Vec<Article> = article::table
             .filter(article::id.gt(20000))
             .order(article::date.desc())
-            .load(conn)
+            .load(&*conn)
             .expect("error");
         let mut feed_items = Vec::new();
         let mut fulltext_items = Vec::new();

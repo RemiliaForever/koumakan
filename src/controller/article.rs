@@ -151,7 +151,7 @@ fn post_article(
         .values(&*article)
         .execute(&*conn)
         .expect("insert error");
-    cache.refresh_cache(&*conn);
+    cache.refresh_cache(conn);
     "Success"
 }
 
@@ -175,7 +175,7 @@ fn put_article(
         ))
         .execute(&*conn)
         .expect("update error");
-    cache.refresh_cache(&*conn);
+    cache.refresh_cache(conn);
     "Success"
 }
 
@@ -190,6 +190,6 @@ fn delete_article(
     diesel::delete(article::table.filter(article::id.eq(id)))
         .execute(&*conn)
         .expect("delete error");
-    cache.refresh_cache(&*conn);
+    cache.refresh_cache(conn);
     "Success"
 }
