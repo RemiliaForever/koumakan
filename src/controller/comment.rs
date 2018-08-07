@@ -47,17 +47,20 @@ fn send_email(cmt: Comment) -> Result<String, String> {
         .to(format!("{}@{}", username, domain))
         .subject("New comment from blog".to_string())
         .text(format!(
-            "You got one new comment.\n\n\
-             article: https://blog.koumakan.cc/article/{}\n\n\
-             comment: on {}\n\
-             \tname: {}\n\
-             \temail: {}\n\
-             \twebsite: {}\n\
-             \tcontent: {}\n\
-             \n",
+            r#"
+You got one new comment.
+
+article: https://blog.koumakan.cc/article/{}
+comment on {}
+name: {}
+email: {}
+website: {}
+content:
+
+{}
+"#,
             cmt.article_id, cmt.date, cmt.name, cmt.email, cmt.website, cmt.content
-        ))
-        .build()
+        )).build()
         .map_err(|e| format!("build email error: {}", e))?;
     let sender = SmtpTransport::builder_unencrypted_localhost()
         .map_err(|e| format!("resolve server error: {}", e))?;

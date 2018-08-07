@@ -1,17 +1,18 @@
-use std::sync::RwLock;
 use std::collections::BTreeMap;
+use std::sync::RwLock;
 
-use rocket::State;
-use rocket::response::content::Xml;
-use rocket_contrib::Json;
-use diesel::prelude::*;
 use chrono;
-use chrono::DateTime;
 use chrono::offset::Local;
-
-use models::*;
-use db::DbConn;
+use chrono::DateTime;
+use comrak::{markdown_to_html, ComrakOptions};
+use diesel::prelude::*;
+use rocket::response::content::Xml;
+use rocket::State;
+use rocket_contrib::Json;
 use rss::{Category, Channel, ChannelBuilder, ItemBuilder};
+
+use db::DbConn;
+use models::*;
 
 pub struct ALCache {
     archives: RwLock<BTreeMap<String, i32>>,
@@ -76,14 +77,17 @@ impl ALCache {
                 .link(format!(
                     "https://blog.koumakan.cc/article/{}",
                     article.id.unwrap()
-                ))
-                .categories(vec![category])
+                )).categories(vec![category])
                 .pub_date(datetime.to_rfc2822())
                 .build()
                 .unwrap();
             item_builder.set_description(article.brief.clone());
             feed_items.push(item_builder.clone());
-            item_builder.set_description(format!("{}\n\n{}", article.brief, article.content));
+            item_builder.set_description(format!(
+                "{}\n\n{}",
+                article.brief,
+                markdown_to_html(&article.content, &ComrakOptions::default())
+            ));
             fulltext_items.push(item_builder);
         }
         let date = Local::now().to_rfc2822();

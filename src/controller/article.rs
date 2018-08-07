@@ -1,14 +1,14 @@
+use chrono::Local;
 use diesel;
-use serde_json;
 use diesel::prelude::*;
 use rocket::http::Cookies;
-use rocket_contrib::Json;
 use rocket::request::State;
-use chrono::Local;
+use rocket_contrib::Json;
+use serde_json;
 
+use super::ALCache;
 use db::DbConn;
 use models::*;
-use super::ALCache;
 
 #[get("/articles/<id>")]
 fn get_article(conn: DbConn, id: i32) -> Json<Option<Article>> {
@@ -86,14 +86,13 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                         .concat(article::labels)
                         .concat(",")
                         .like(format!("%,{},%", value)),
-                )
-                .filter(article::id.gt(20000))
+                ).filter(article::id.gt(20000))
                 .order(article::date.desc())
                 .limit(pagesize)
                 .offset(offset)
                 .load::<Article>(&*conn),
             "archive" => {
-                let date: Vec<&str> = value.split("-").collect();
+                let date: Vec<&str> = value.split('-').collect();
                 let year = date[0].parse::<u32>().unwrap_or(2000);
                 let month = date[1].parse::<u32>().unwrap_or(1);
                 article::table
@@ -101,8 +100,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                         article::date
                             .ge(format!("{:04}-{:02}", year, month))
                             .and(article::date.lt(format!("{:04}-{:02}", year, month + 1))),
-                    )
-                    .filter(article::id.gt(20000))
+                    ).filter(article::id.gt(20000))
                     .order(article::date.desc())
                     .limit(pagesize)
                     .offset(offset)
@@ -115,8 +113,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
                         .or(article::brief.like(format!("%{}%", value)))
                         .or(article::category.like(format!("%{}%", value)))
                         .or(article::labels.like(format!("%{}%", value))),
-                )
-                .filter(article::id.gt(20000))
+                ).filter(article::id.gt(20000))
                 .order(article::date.desc())
                 .limit(pagesize)
                 .offset(offset)
@@ -172,8 +169,7 @@ fn put_article(
             article::category.eq(&article.category),
             article::labels.eq(&article.labels),
             article::date.eq(&article.date),
-        ))
-        .execute(&*conn)
+        )).execute(&*conn)
         .expect("update error");
     cache.refresh_cache(conn);
     "Success"

@@ -1,10 +1,9 @@
 #![feature(plugin, custom_derive)]
 #![plugin(rocket_codegen)]
-#![recursion_limit = "128"]
+#![warn(clippy)]
 
 #[macro_use]
 extern crate diesel;
-extern crate r2d2_diesel;
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate serde;
@@ -14,6 +13,7 @@ extern crate serde_derive;
 extern crate serde_json;
 
 extern crate chrono;
+extern crate comrak;
 extern crate lettre;
 extern crate lettre_email;
 extern crate md5;
@@ -35,8 +35,7 @@ fn main() {
         .attach(AdHoc::on_attach(|server| {
             let token = String::from(server.config().get_str("token").unwrap());
             Ok(server.manage(token))
-        }))
-        .manage(pool)
+        })).manage(pool)
         .manage(cache)
         .launch();
 }
