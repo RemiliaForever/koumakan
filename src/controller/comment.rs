@@ -1,13 +1,13 @@
 use chrono;
 use diesel;
 use diesel::prelude::*;
-use lettre::{EmailTransport, SmtpTransport};
+use lettre::{EmailTransport, SendmailTransport};
 use lettre_email::EmailBuilder;
 use md5;
 use rocket_contrib::Json;
 
-use db::DbConn;
-use models::*;
+use crate::db::DbConn;
+use crate::models::*;
 
 #[get("/comments/<aid>")]
 fn get_comments(conn: DbConn, aid: i32) -> Json<Vec<Comment>> {
@@ -60,13 +60,11 @@ content:
 {}
 "#,
             cmt.article_id, cmt.date, cmt.name, cmt.email, cmt.website, cmt.content
-        )).build()
-        .map_err(|e| format!("build email error: {}", e))?;
-    let sender = SmtpTransport::builder_unencrypted_localhost()
-        .map_err(|e| format!("resolve server error: {}", e))?;
-    sender
+        ))
         .build()
+        .map_err(|e| format!("build email error: {}", e))?;
+    SendmailTransport::new()
         .send(&email)
-        .map(|e| format!("smtp server response: {:?}", e))
-        .map_err(|e| format!("smtp server error: {}", e))
+        .map(|_r| "Ok".to_owned())
+        .map_err(|e| format!("send error: {}", e))
 }

@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-pub use schema::*;
+pub use crate::schema::*;
 
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]

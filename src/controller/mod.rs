@@ -3,8 +3,8 @@ mod comment;
 mod label_archive;
 mod user;
 
-use rocket::Route;
 pub use self::label_archive::ALCache;
+use rocket::Route;
 
 pub fn get_routes() -> Vec<Route> {
     routes![

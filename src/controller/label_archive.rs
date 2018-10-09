@@ -11,8 +11,8 @@ use rocket::State;
 use rocket_contrib::Json;
 use rss::{Category, Channel, ChannelBuilder, ItemBuilder};
 
-use db::DbConn;
-use models::*;
+use crate::db::DbConn;
+use crate::models::*;
 
 pub struct ALCache {
     archives: RwLock<BTreeMap<String, i32>>,
@@ -67,7 +67,6 @@ impl ALCache {
             let archives_result: String = article.date.format("%Y-%m").to_string();
             let count = archives.entry(archives_result).or_insert(0);
             *count += 1;
-
             let mut category = Category::default();
             category.set_name(article.category);
             let offset = chrono::FixedOffset::east(8 * 3600);
