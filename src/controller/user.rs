@@ -1,9 +1,14 @@
-use rocket::http::{Cookie, Cookies};
+use std::io::Read;
+
+use rocket::data::Data;
+use rocket::http::{Cookie, Cookies, Status};
 use rocket::State;
 
 #[post("/login", data = "<pass>")]
-fn login(mut cookies: Cookies, token: State<String>, pass: String) -> &'static str {
-    if *token == pass {
+pub fn login(mut cookies: Cookies, token: State<String>, pass: Data) -> &'static str {
+    let mut password = String::new();
+    let _ = pass.open().read_to_string(&mut password);
+    if *token == password {
         cookies.add_private(Cookie::new("isLogin", "true"));
         "Login Success"
     } else {
@@ -12,6 +17,9 @@ fn login(mut cookies: Cookies, token: State<String>, pass: String) -> &'static s
 }
 
 #[get("/login")]
-fn check_login(mut cookies: Cookies) {
-    cookies.get_private("isLogin").expect("Validate Error");
+pub fn check_login(mut cookies: Cookies) -> Status {
+    match cookies.get_private("isLogin") {
+        Some(_) => Status::Ok,
+        None => Status::Unauthorized,
+    }
 }

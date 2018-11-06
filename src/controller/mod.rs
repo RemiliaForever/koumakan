@@ -11,7 +11,6 @@ pub fn get_routes() -> Vec<Route> {
         article::get_article,
         article::get_article_nav,
         article::get_article_list,
-        article::get_article_list_default,
         article::post_article,
         article::put_article,
         article::delete_article,

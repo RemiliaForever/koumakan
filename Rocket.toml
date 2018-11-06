@@ -6,3 +6,6 @@ workers = 3
 log = "normal"
 
 token = "test"
+
+[global.databases]
+koumakan = { url = "koumakan.db" }

@@ -1,28 +1,29 @@
 use std::collections::BTreeMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
 
-use chrono;
 use chrono::offset::Local;
 use chrono::DateTime;
 use comrak::{markdown_to_html, ComrakOptions};
 use diesel::prelude::*;
 use rocket::response::content::Xml;
 use rocket::State;
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 use rss::{Category, Channel, ChannelBuilder, ItemBuilder};
 
 use crate::db::DbConn;
-use crate::models::*;
+use crate::model::*;
 
 pub struct ALCache {
     archives: RwLock<BTreeMap<String, i32>>,
     labels: RwLock<BTreeMap<String, i32>>,
     rss_feed: RwLock<Channel>,
     rss_fulltext: RwLock<Channel>,
+    pub is_dirty: AtomicBool,
 }
 
 impl ALCache {
-    pub fn init_cache(conn: DbConn) -> ALCache {
+    pub fn init_cache() -> ALCache {
         let rss_builder = ChannelBuilder::default()
             .title("RemiliaForever's Blog")
             .description("Welcome to Koumakan")
@@ -37,19 +38,19 @@ impl ALCache {
             labels: RwLock::new(BTreeMap::new()),
             rss_feed: RwLock::new(rss_builder.clone()),
             rss_fulltext: RwLock::new(rss_builder.clone()),
+            is_dirty: AtomicBool::new(true),
         };
-        cache.refresh_cache(conn);
         cache
     }
 
     pub fn refresh_cache(&self, conn: DbConn) {
-        let labels: &mut BTreeMap<String, i32> = &mut *self.labels.write().unwrap();
-        let archives: &mut BTreeMap<String, i32> = &mut *self.archives.write().unwrap();
+        let labels: &mut BTreeMap<String, i32> = &mut self.labels.write().unwrap();
+        let archives: &mut BTreeMap<String, i32> = &mut self.archives.write().unwrap();
         labels.clear();
         archives.clear();
 
-        let rss_feed: &mut Channel = &mut *self.rss_feed.write().unwrap();
-        let rss_fulltext: &mut Channel = &mut *self.rss_fulltext.write().unwrap();
+        let rss_feed: &mut Channel = &mut self.rss_feed.write().unwrap();
+        let rss_fulltext: &mut Channel = &mut self.rss_fulltext.write().unwrap();
         // less 20000 for help page
         let result: Vec<Article> = article::table
             .filter(article::id.gt(20000))
@@ -76,7 +77,8 @@ impl ALCache {
                 .link(format!(
                     "https://blog.koumakan.cc/article/{}",
                     article.id.unwrap()
-                )).categories(vec![category])
+                ))
+                .categories(vec![category])
                 .pub_date(datetime.to_rfc2822())
                 .build()
                 .unwrap();
@@ -97,24 +99,40 @@ impl ALCache {
         rss_fulltext.set_pub_date(date.clone());
         rss_fulltext.set_last_build_date(date.clone());
     }
+
+    pub fn dirty(&self) {
+        self.is_dirty.store(true, Ordering::Relaxed);
+    }
 }
 
 #[get("/archive")]
-fn get_archive(cache: State<ALCache>) -> Json<BTreeMap<String, i32>> {
+pub fn get_archive(cache: State<ALCache>, conn: DbConn) -> Json<BTreeMap<String, i32>> {
+    check_dirty(&cache, conn);
     Json(cache.archives.read().unwrap().clone())
 }
 
 #[get("/labels")]
-fn get_label(cache: State<ALCache>) -> Json<BTreeMap<String, i32>> {
+pub fn get_label(cache: State<ALCache>, conn: DbConn) -> Json<BTreeMap<String, i32>> {
+    check_dirty(&cache, conn);
     Json(cache.labels.read().unwrap().clone())
 }
 
 #[get("/rss/feed")]
-fn rss_feed(cache: State<ALCache>) -> Xml<String> {
+pub fn rss_feed(cache: State<ALCache>, conn: DbConn) -> Xml<String> {
+    check_dirty(&cache, conn);
     Xml(cache.rss_feed.read().unwrap().to_string())
 }
 
 #[get("/rss/full")]
-fn rss_full(cache: State<ALCache>) -> Xml<String> {
+pub fn rss_full(cache: State<ALCache>, conn: DbConn) -> Xml<String> {
+    check_dirty(&cache, conn);
     Xml(cache.rss_fulltext.read().unwrap().to_string())
+}
+
+#[inline]
+fn check_dirty(cache: &State<ALCache>, conn: DbConn) {
+    if cache.is_dirty.load(Ordering::Relaxed) {
+        cache.refresh_cache(conn);
+        cache.is_dirty.store(false, Ordering::Relaxed);
+    }
 }

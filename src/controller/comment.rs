@@ -1,16 +1,13 @@
-use chrono;
-use diesel;
 use diesel::prelude::*;
 use lettre::{EmailTransport, SendmailTransport};
 use lettre_email::EmailBuilder;
-use md5;
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 
 use crate::db::DbConn;
-use crate::models::*;
+use crate::model::*;
 
 #[get("/comments/<aid>")]
-fn get_comments(conn: DbConn, aid: i32) -> Json<Vec<Comment>> {
+pub fn get_comments(conn: DbConn, aid: i32) -> Json<Vec<Comment>> {
     let mut comments = comment::table
         .filter(comment::article_id.eq(aid))
         .order(comment::date)
@@ -24,7 +21,7 @@ fn get_comments(conn: DbConn, aid: i32) -> Json<Vec<Comment>> {
 }
 
 #[post("/comments", data = "<cmt>")]
-fn post_comments(conn: DbConn, mut cmt: Json<Comment>) {
+pub fn post_comments(conn: DbConn, mut cmt: Json<Comment>) {
     // caculate avatar
     cmt.avatar = format!(
         "https://www.gravatar.com/avatar/{:x}?s=56d=identicon",

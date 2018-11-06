@@ -1,17 +1,15 @@
 use chrono::Local;
-use diesel;
 use diesel::prelude::*;
 use rocket::http::Cookies;
-use rocket::request::State;
-use rocket_contrib::Json;
-use serde_json::{self, json};
+use rocket::request::{Form, State};
+use rocket_contrib::json::{Json, JsonValue};
 
 use super::ALCache;
 use crate::db::DbConn;
-use crate::models::*;
+use crate::model::*;
 
 #[get("/articles/<id>")]
-fn get_article(conn: DbConn, id: i32) -> Json<Option<Article>> {
+pub fn get_article(conn: DbConn, id: i32) -> Json<Option<Article>> {
     let mut article = article::table
         .filter(article::id.eq(id))
         .load::<Article>(&*conn)
@@ -20,58 +18,53 @@ fn get_article(conn: DbConn, id: i32) -> Json<Option<Article>> {
 }
 
 #[get("/articles/<id>/nav")]
-fn get_article_nav(conn: DbConn, id: i32) -> Json<serde_json::Value> {
+pub fn get_article_nav(conn: DbConn, id: i32) -> JsonValue {
     use diesel::result::Error;
-    fn art_to_nav(result: Result<String, Error>, art_id: i32) -> serde_json::Value {
+    fn art_to_nav(result: Result<String, Error>, art_id: i32) -> JsonValue {
         match result {
             Ok(s) => json!({"id": art_id, "title": s }),
             _ => json!({"id": -1, "title": "没有了"}),
         }
     }
-    let art_pre: Result<String, _> = article::table
+    let art_pre: Result<String, Error> = article::table
         .select(article::title)
         .filter(article::id.eq(id - 1))
         .first(&*conn);
-    let art_next: Result<String, _> = article::table
+    let art_next: Result<String, Error> = article::table
         .select(article::title)
         .filter(article::id.eq(id + 1))
         .first(&*conn);
-    Json(json!({
+    json!({
         "pre":art_to_nav(art_pre, id - 1),
         "next":art_to_nav(art_next, id + 1)
-    }))
+    })
 }
 
 #[derive(Default)]
 #[derive(FromForm)]
-struct ArticleQueryParam {
+pub struct ArticleQueryParam {
     filter: Option<String>,
     value: Option<String>,
     pagesize: Option<i64>,
     offset: Option<i64>,
 }
 
-#[get("/articles")]
-fn get_article_list_default(conn: DbConn) -> Json<Vec<Article>> {
-    get_article_list(conn, ArticleQueryParam::default())
-}
-
-#[get("/articles?<param>")]
-fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>> {
+#[get("/articles?<param..>")]
+pub fn get_article_list(conn: DbConn, param: Form<ArticleQueryParam>) -> Json<Vec<Article>> {
     let value = match param.value {
-        Some(s) => s,
+        Some(ref s) => s.clone(),
         None => String::from(""),
     };
     let pagesize = match param.pagesize {
-        Some(p) => p,
+        Some(ref p) => p.clone(),
         None => 10,
     };
     let offset = match param.offset {
-        Some(o) => o,
+        Some(ref o) => o.clone(),
         None => 0,
     };
     let query = match param.filter {
-        Some(s) => match s.as_ref() {
+        Some(ref s) => match s.as_ref() {
             "category" => article::table
                 .filter(article::category.eq(value))
                 .filter(article::id.gt(20000))
@@ -139,7 +132,7 @@ fn get_article_list(conn: DbConn, param: ArticleQueryParam) -> Json<Vec<Article>
 }
 
 #[post("/articles", data = "<article>")]
-fn post_article(
+pub fn post_article(
     mut cookies: Cookies,
     conn: DbConn,
     cache: State<ALCache>,
@@ -151,12 +144,12 @@ fn post_article(
         .values(&*article)
         .execute(&*conn)
         .expect("insert error");
-    cache.refresh_cache(conn);
+    cache.dirty();
     "Success"
 }
 
 #[put("/articles", data = "<article>")]
-fn put_article(
+pub fn put_article(
     mut cookies: Cookies,
     conn: DbConn,
     cache: State<ALCache>,
@@ -175,12 +168,12 @@ fn put_article(
         ))
         .execute(&*conn)
         .expect("update error");
-    cache.refresh_cache(conn);
+    cache.dirty();
     "Success"
 }
 
 #[delete("/articles/<id>")]
-fn delete_article(
+pub fn delete_article(
     mut cookies: Cookies,
     conn: DbConn,
     cache: State<ALCache>,
@@ -190,6 +183,6 @@ fn delete_article(
     diesel::delete(article::table.filter(article::id.eq(id)))
         .execute(&*conn)
         .expect("delete error");
-    cache.refresh_cache(conn);
+    cache.dirty();
     "Success"
 }
