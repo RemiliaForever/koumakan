@@ -4,7 +4,7 @@ use rocket::http::Cookies;
 use rocket::request::{Form, State};
 use rocket_contrib::json::{Json, JsonValue};
 
-use super::ALCache;
+use crate::controller::ALCache;
 use crate::db::DbConn;
 use crate::model::*;
 
@@ -20,12 +20,14 @@ pub fn get_article(conn: DbConn, id: i32) -> Json<Option<Article>> {
 #[get("/articles/<id>/nav")]
 pub fn get_article_nav(conn: DbConn, id: i32) -> JsonValue {
     use diesel::result::Error;
+    #[inline]
     fn art_to_nav(result: Result<String, Error>, art_id: i32) -> JsonValue {
         match result {
             Ok(s) => json!({"id": art_id, "title": s }),
             _ => json!({"id": -1, "title": "没有了"}),
         }
     }
+
     let art_pre: Result<String, Error> = article::table
         .select(article::title)
         .filter(article::id.eq(id - 1))

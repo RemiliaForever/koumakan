@@ -51,7 +51,7 @@ impl ALCache {
 
         let rss_feed: &mut Channel = &mut self.rss_feed.write().unwrap();
         let rss_fulltext: &mut Channel = &mut self.rss_fulltext.write().unwrap();
-        // less 20000 for help page
+        // filter help page
         let result: Vec<Article> = article::table
             .filter(article::id.gt(20000))
             .order(article::date.desc())
