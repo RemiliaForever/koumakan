@@ -19,7 +19,7 @@ pub struct ALCache {
     labels: RwLock<BTreeMap<String, i32>>,
     rss_feed: RwLock<Channel>,
     rss_fulltext: RwLock<Channel>,
-    pub is_dirty: AtomicBool,
+    is_dirty: AtomicBool,
 }
 
 impl ALCache {
@@ -61,13 +61,21 @@ impl ALCache {
         let mut fulltext_items = Vec::new();
         for article in result {
             let labels_result: Vec<&str> = article.labels.split(",").collect();
-            for label in labels_result {
-                let count = labels.entry(String::from(label)).or_insert(0);
-                *count += 1;
-            }
+            labels_result
+                .into_iter()
+                .map(|label| {
+                    labels
+                        .entry(label.to_owned())
+                        .and_modify(|count| *count += 1)
+                        .or_insert(0);
+                })
+                .count();
             let archives_result: String = article.date.format("%Y-%m").to_string();
-            let count = archives.entry(archives_result).or_insert(0);
-            *count += 1;
+            archives
+                .entry(archives_result)
+                .and_modify(|count| *count += 1)
+                .or_insert(0);
+
             let mut category = Category::default();
             category.set_name(article.category);
             let offset = chrono::FixedOffset::east(8 * 3600);
@@ -100,39 +108,40 @@ impl ALCache {
         rss_fulltext.set_last_build_date(date.clone());
     }
 
+    #[inline]
     pub fn dirty(&self) {
         self.is_dirty.store(true, Ordering::Relaxed);
+    }
+
+    #[inline]
+    pub fn check_dirty(&self, conn: DbConn) {
+        if self.is_dirty.load(Ordering::Relaxed) {
+            self.refresh_cache(conn);
+            self.is_dirty.store(false, Ordering::Relaxed);
+        }
     }
 }
 
 #[get("/archive")]
 pub fn get_archive(cache: State<ALCache>, conn: DbConn) -> Json<BTreeMap<String, i32>> {
-    check_dirty(&cache, conn);
+    cache.check_dirty(conn);
     Json(cache.archives.read().unwrap().clone())
 }
 
 #[get("/labels")]
 pub fn get_label(cache: State<ALCache>, conn: DbConn) -> Json<BTreeMap<String, i32>> {
-    check_dirty(&cache, conn);
+    cache.check_dirty(conn);
     Json(cache.labels.read().unwrap().clone())
 }
 
 #[get("/rss/feed")]
 pub fn rss_feed(cache: State<ALCache>, conn: DbConn) -> Xml<String> {
-    check_dirty(&cache, conn);
+    cache.check_dirty(conn);
     Xml(cache.rss_feed.read().unwrap().to_string())
 }
 
 #[get("/rss/full")]
 pub fn rss_full(cache: State<ALCache>, conn: DbConn) -> Xml<String> {
-    check_dirty(&cache, conn);
+    cache.check_dirty(conn);
     Xml(cache.rss_fulltext.read().unwrap().to_string())
-}
-
-#[inline]
-fn check_dirty(cache: &State<ALCache>, conn: DbConn) {
-    if cache.is_dirty.load(Ordering::Relaxed) {
-        cache.refresh_cache(conn);
-        cache.is_dirty.store(false, Ordering::Relaxed);
-    }
 }

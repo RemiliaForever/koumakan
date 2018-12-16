@@ -1,6 +1,6 @@
 use chrono::Local;
 use diesel::prelude::*;
-use rocket::http::Cookies;
+use rocket::http::{Cookies, Status};
 use rocket::request::{Form, State};
 use rocket_contrib::json::{Json, JsonValue};
 
@@ -125,12 +125,17 @@ pub fn get_article_list(conn: DbConn, param: Form<ArticleQueryParam>) -> Json<Ve
             .offset(offset)
             .load::<Article>(&*conn),
     };
-    let mut result = query.expect("error");
+    let result = query.expect("error");
     // mask content
-    for a in &mut result {
-        a.content = String::from("")
-    }
-    Json(result)
+    Json(
+        result
+            .into_iter()
+            .map(|mut a| {
+                a.content = "".to_owned();
+                a
+            })
+            .collect(),
+    )
 }
 
 #[post("/articles", data = "<article>")]
@@ -139,7 +144,7 @@ pub fn post_article(
     conn: DbConn,
     cache: State<ALCache>,
     mut article: Json<Article>,
-) -> &'static str {
+) -> Status {
     cookies.get_private("isLogin").expect("Validate Error");
     article.date = Local::now().naive_local();
     diesel::insert_into(article::table)
@@ -147,7 +152,7 @@ pub fn post_article(
         .execute(&*conn)
         .expect("insert error");
     cache.dirty();
-    "Success"
+    Status::Ok
 }
 
 #[put("/articles", data = "<article>")]
@@ -156,7 +161,7 @@ pub fn put_article(
     conn: DbConn,
     cache: State<ALCache>,
     article: Json<Article>,
-) -> &'static str {
+) -> Status {
     cookies.get_private("isLogin").expect("Validate Error");
     // article.date = Local::now().naive_local();
     diesel::update(article::table.filter(article::id.eq(article.id)))
@@ -171,7 +176,7 @@ pub fn put_article(
         .execute(&*conn)
         .expect("update error");
     cache.dirty();
-    "Success"
+    Status::Ok
 }
 
 #[delete("/articles/<id>")]
@@ -180,11 +185,11 @@ pub fn delete_article(
     conn: DbConn,
     cache: State<ALCache>,
     id: i32,
-) -> &'static str {
+) -> Status {
     cookies.get_private("isLogin").expect("Validate Error");
     diesel::delete(article::table.filter(article::id.eq(id)))
         .execute(&*conn)
         .expect("delete error");
     cache.dirty();
-    "Success"
+    Status::Ok
 }
