@@ -67,14 +67,14 @@ impl ALCache {
                     labels
                         .entry(label.to_owned())
                         .and_modify(|count| *count += 1)
-                        .or_insert(0);
+                        .or_insert(1);
                 })
                 .count();
             let archives_result: String = article.date.format("%Y-%m").to_string();
             archives
                 .entry(archives_result)
                 .and_modify(|count| *count += 1)
-                .or_insert(0);
+                .or_insert(1);
 
             let mut category = Category::default();
             category.set_name(article.category);
