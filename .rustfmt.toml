@@ -3,3 +3,5 @@ error_on_line_overflow = false
 condense_wildcard_suffixes = true
 fn_args_density = "Tall"
 merge_derives = false
+merge_imports = true
+imports_layout = "HorizontalVertical"

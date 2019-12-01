@@ -1,0 +1,50 @@
+/* common */
+.devide {
+    height: 1px;
+    background-color: rgba(0,0,0,.1);
+}
+
+/* nav */
+#avatar > img {
+    display: block;
+    height: 96px;
+    width: 96px;
+    border-radius: 50%;
+    margin: 30px auto 20px auto;
+    box-shadow: black 0 0 2px;
+}
+#avatar > span {
+    display: block;
+    text-align: center;
+    margin-bottom: 12px;
+    color: #474a4f;
+    font-size: 24px;
+    line-height: 32px;
+}
+
+nav {
+    user-select: none;
+}
+nav > ul > li:hover {
+    background-color: #eee;
+    cursor: pointer;
+}
+nav > ul > li > div > span {
+    height: 24px;
+    line-height: 28px;
+}
+
+.mdl-layout__drawer-button {
+    color: rgb(96,125,139) !important;
+}
+/* header */
+#header {
+    background-color: #fafafa;
+    color: rgb(96,125,139);
+}
+
+/* main */
+#main {
+}
+
+

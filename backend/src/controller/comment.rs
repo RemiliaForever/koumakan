@@ -1,6 +1,7 @@
 use diesel::prelude::*;
-use lettre::{EmailTransport, SendmailTransport};
-use lettre_email::EmailBuilder;
+use lettre::SendmailTransport;
+use lettre::Transport;
+use lettre_email::Email;
 use rocket_contrib::json::Json;
 
 use crate::db::DbConn;
@@ -39,7 +40,7 @@ fn send_email(cmt: Comment) -> Result<String, String> {
     // send email
     let domain = "koumakan.cc";
     let username = "remilia";
-    let email = EmailBuilder::new()
+    let email = Email::builder()
         .from((format!("notify@{}", domain), "Blog Notifier"))
         .to(format!("{}@{}", username, domain))
         .subject("New comment from blog".to_string())
@@ -61,7 +62,7 @@ content:
         .build()
         .map_err(|e| format!("build email error: {}", e))?;
     SendmailTransport::new()
-        .send(&email)
+        .send(email.into())
         .map(|_r| "Ok".to_owned())
         .map_err(|e| format!("send error: {}", e))
 }

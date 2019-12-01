@@ -4,20 +4,14 @@
 extern crate rocket;
 #[macro_use]
 extern crate rocket_contrib;
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate serde_derive;
 
 mod catcher;
 mod controller;
 mod db;
 mod model;
-mod schema;
 
 fn main() {
     let server = rocket::ignite();
-    // let pool = db::init();
     let token = String::from(
         server
             .config()

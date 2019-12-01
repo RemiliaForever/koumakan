@@ -1,10 +1,11 @@
+#[cfg(feature = "orm")]
 pub use crate::schema::*;
 use chrono::NaiveDateTime;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
-#[derive(Queryable, Insertable)]
-#[table_name = "comment"]
+#[cfg_attr(feature = "orm", derive(Queryable, Insertable), table_name = "comment")]
 pub struct Comment {
     pub id: Option<i32>,
     pub article_id: i32,
@@ -19,8 +20,7 @@ pub struct Comment {
 
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
-#[derive(Queryable, Insertable)]
-#[table_name = "article"]
+#[cfg_attr(feature = "orm", derive(Queryable, Insertable), table_name = "comment")]
 pub struct Article {
     pub id: Option<i32>,
     pub title: String,
