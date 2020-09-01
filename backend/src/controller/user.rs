@@ -1,25 +1,22 @@
-use std::io::Read;
+use actix_web::{get, web, HttpResponse};
 
-use rocket::data::Data;
-use rocket::http::{Cookie, Cookies, Status};
-use rocket::State;
-
-#[post("/login", data = "<pass>")]
-pub fn login(mut cookies: Cookies, token: State<String>, pass: Data) -> Status {
-    let mut password = String::new();
-    let _ = pass.open().read_to_string(&mut password);
-    if *token == password {
-        cookies.add_private(Cookie::new("isLogin", "true"));
-        Status::Ok
+pub fn check_login(req: web::HttpRequest) -> Result<HttpResponse, HttpResponse> {
+    if let Some(h) = req.headers().get("Authorization") {
+        if let Ok(token) = h.to_str() {
+            if dotenv::var("TOKEN").unwrap() == token {
+                Ok(HttpResponse::Ok().finish())
+            } else {
+                Err(HttpResponse::Forbidden().finish())
+            }
+        } else {
+            Err(HttpResponse::BadRequest().finish())
+        }
     } else {
-        Status::Unauthorized
+        Err(HttpResponse::Unauthorized().finish())
     }
 }
 
 #[get("/login")]
-pub fn check_login(mut cookies: Cookies) -> Status {
-    match cookies.get_private("isLogin") {
-        Some(_) => Status::Ok,
-        None => Status::Unauthorized,
-    }
+async fn get_login(req: web::HttpRequest) -> Result<HttpResponse, HttpResponse> {
+    check_login(req)
 }
