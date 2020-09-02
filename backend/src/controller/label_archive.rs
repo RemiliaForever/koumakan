@@ -1,18 +1,13 @@
-use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::RwLock;
+use std::{
+    collections::BTreeMap,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        RwLock,
+    },
+};
 
-use chrono::offset::Local;
-use chrono::DateTime;
-use comrak::{markdown_to_html, ComrakOptions};
-use diesel::prelude::*;
-use rocket::response::content::Xml;
-use rocket::State;
-use rocket_contrib::json::Json;
+use chrono::{offset::Local, DateTime};
 use rss::{Category, Channel, ChannelBuilder, ItemBuilder};
-
-use crate::db::DbConn;
-use crate::model::*;
 
 pub struct ALCache {
     archives: RwLock<BTreeMap<String, i32>>,
@@ -123,7 +118,7 @@ impl ALCache {
 }
 
 #[get("/archive")]
-pub fn get_archive(cache: State<ALCache>, conn: DbConn) -> Json<BTreeMap<String, i32>> {
+async fn get_archive() -> Json<BTreeMap<String, i32>> {
     cache.check_dirty(conn);
     Json(cache.archives.read().unwrap().clone())
 }

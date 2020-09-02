@@ -1,68 +1,94 @@
-use diesel::prelude::*;
-use lettre::SendmailTransport;
+use actix_web::{get, post, web, Error, HttpResponse};
 use lettre::Transport;
-use lettre_email::Email;
-use rocket_contrib::json::Json;
+use sqlx::SqlitePool;
 
-use crate::db::DbConn;
-use crate::model::*;
+use common::Comment;
 
-#[get("/comments/<aid>")]
-pub fn get_comments(conn: DbConn, aid: i32) -> Json<Vec<Comment>> {
-    let mut comments = comment::table
-        .filter(comment::article_id.eq(aid))
-        .order(comment::date)
-        .load::<Comment>(&*conn)
-        .expect("error");
+use crate::controller::ResError;
+
+#[get("/article/{id}/comment")]
+async fn get_article_comments(
+    pool: web::Data<SqlitePool>,
+    param: web::Path<i32>,
+) -> Result<HttpResponse, Error> {
+    let mut comments = sqlx::query_as!(
+        Comment,
+        "SELECT * FROM comment WHERE article_id = ? ORDER BY comment.date DESC",
+        param.0
+    )
+    .fetch_all(&**pool)
+    .await
+    .map_err(ResError::new)?;
     // mask user's email
     for comment in &mut comments {
-        comment.email = String::from("");
+        comment.email = "".to_owned();
     }
-    Json(comments)
+    Ok(HttpResponse::Ok().body(bincode::serialize(&comments).map_err(ResError::new)?))
 }
 
-#[post("/comments", data = "<cmt>")]
-pub fn post_comments(conn: DbConn, mut cmt: Json<Comment>) {
+#[post("/article/{id}/comment")]
+async fn create_comment(
+    pool: web::Data<SqlitePool>,
+    param: web::Path<i64>,
+    body: web::Bytes,
+) -> Result<HttpResponse, Error> {
+    let mut comment = bincode::deserialize::<Comment>(&body).map_err(ResError::new)?;
+    comment.article_id = param.0;
     // caculate avatar
-    cmt.avatar = format!(
+    comment.avatar = format!(
         "https://www.gravatar.com/avatar/{:x}?s=56d=identicon",
-        md5::compute(cmt.email.trim())
+        md5::compute(comment.email.trim())
     );
-    cmt.date = chrono::Local::now().naive_local();
-    diesel::insert_into(comment::table)
-        .values(&*cmt)
-        .execute(&*conn)
-        .expect("insert error");
-    println!("Send mail: {:?}", send_email(cmt.0));
+    comment.date = chrono::Local::now().naive_local();
+    let result = sqlx::query!(
+        "INSERT INTO comment VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)",
+        comment.article_id,
+        comment.name,
+        comment.email,
+        comment.website,
+        comment.content,
+        comment.avatar,
+        comment.date
+    )
+    .execute(&**pool)
+    .await
+    .map_err(ResError::new)?
+    .last_insert_rowid();
+    comment.id = Some(result);
+
+    info!("Send mail: {:?}", send_email(&comment));
+    Ok(HttpResponse::Ok().body(bincode::serialize(&comment).map_err(ResError::new)?))
 }
 
-fn send_email(cmt: Comment) -> Result<String, String> {
+fn send_email(comment: &Comment) -> Result<String, String> {
     // send email
-    let domain = "koumakan.cc";
-    let username = "remilia";
-    let email = Email::builder()
-        .from((format!("notify@{}", domain), "Blog Notifier"))
-        .to(format!("{}@{}", username, domain))
+    let email = lettre::Message::builder()
+        .from("Blog Notifier <notify@koumakan.cc>".parse().unwrap())
+        .reply_to("RemiliaForever <remilia@kouamkan.cc>".parse().unwrap())
         .subject("New comment from blog".to_string())
-        .text(format!(
+        .body(format!(
             r#"
-You got one new comment.
+    You got one new comment.
 
-article: https://blog.koumakan.cc/article/{}
-comment on {}
-name: {}
-email: {}
-website: {}
-content:
+    article: https://blog.koumakan.cc/article/{}
+    comment on {}
+    name: {}
+    email: {}
+    website: {}
+    content:
 
-{}
-"#,
-            cmt.article_id, cmt.date, cmt.name, cmt.email, cmt.website, cmt.content
+    {}
+    "#,
+            comment.article_id,
+            comment.date,
+            comment.name,
+            comment.email,
+            comment.website,
+            comment.content
         ))
-        .build()
-        .map_err(|e| format!("build email error: {}", e))?;
-    SendmailTransport::new()
-        .send(email.into())
+        .map_err(|e| e.to_string())?;
+    lettre::SmtpTransport::unencrypted_localhost()
+        .send(&email)
         .map(|_r| "Ok".to_owned())
-        .map_err(|e| format!("send error: {}", e))
+        .map_err(|e| e.to_string())
 }

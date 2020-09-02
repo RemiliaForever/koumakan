@@ -1,8 +1,9 @@
-use actix_web::{get, web, Error, HttpResponse};
-use sqlx::SqlitePool;
+use actix_web::{delete, get, post, put, web, Error, HttpResponse};
+use sqlx::{Done, SqlitePool};
 
-use crate::controller::ResError;
 use common::Article;
+
+use crate::controller::{effect_one, user::check_login, ResError};
 
 // use crate::controller::ALCache;
 
@@ -36,7 +37,6 @@ async fn get_article_nav(
         .map_err(ResError::new)?;
 
     let result = vec![art_pre, art_next];
-    debug!("{:?}", result);
     Ok(HttpResponse::Ok().body(bincode::serialize(&result).map_err(ResError::new)?))
 }
 
@@ -135,59 +135,76 @@ async fn get_article_nav(
 //             .collect(),
 //     )
 // }
-//
-// #[post("/articles", data = "<article>")]
-// pub fn post_article(
-//     mut cookies: Cookies,
-//     conn: DbConn,
-//     cache: State<ALCache>,
-//     mut article: Json<Article>,
-// ) -> Status {
-//     cookies.get_private("isLogin").expect("Validate Error");
-//     article.date = Local::now().naive_local();
-//     diesel::insert_into(article::table)
-//         .values(&*article)
-//         .execute(&*conn)
-//         .expect("insert error");
-//     cache.dirty();
-//     Status::Ok
-// }
-//
-// #[put("/articles", data = "<article>")]
-// pub fn put_article(
-//     mut cookies: Cookies,
-//     conn: DbConn,
-//     cache: State<ALCache>,
-//     article: Json<Article>,
-// ) -> Status {
-//     cookies.get_private("isLogin").expect("Validate Error");
-//     // article.date = Local::now().naive_local();
-//     diesel::update(article::table.filter(article::id.eq(article.id)))
-//         .set((
-//             article::title.eq(&article.title),
-//             article::brief.eq(&article.brief),
-//             article::content.eq(&article.content),
-//             article::category.eq(&article.category),
-//             article::labels.eq(&article.labels),
-//             article::date.eq(&article.date),
-//         ))
-//         .execute(&*conn)
-//         .expect("update error");
-//     cache.dirty();
-//     Status::Ok
-// }
-//
-// #[delete("/articles/<id>")]
-// pub fn delete_article(
-//     mut cookies: Cookies,
-//     conn: DbConn,
-//     cache: State<ALCache>,
-//     id: i32,
-// ) -> Status {
-//     cookies.get_private("isLogin").expect("Validate Error");
-//     diesel::delete(article::table.filter(article::id.eq(id)))
-//         .execute(&*conn)
-//         .expect("delete error");
-//     cache.dirty();
-//     Status::Ok
-// }
+
+#[post("/article")]
+async fn create_article(
+    pool: web::Data<SqlitePool>,
+    req: web::HttpRequest,
+    body: web::Bytes,
+) -> Result<HttpResponse, Error> {
+    check_login(req)?;
+
+    let mut article = bincode::deserialize::<Article>(&body).map_err(ResError::new)?;
+    article.date = chrono::Local::now().naive_local();
+    let result = sqlx::query!(
+        "INSERT INTO article VALUES (0, ?, ?, ?, ?, ?, ?)",
+        article.title,
+        article.brief,
+        article.content,
+        article.category,
+        article.labels,
+        article.date,
+    )
+    .execute(&**pool)
+    .await
+    .map_err(ResError::new)?
+    .last_insert_rowid();
+    article.id = Some(result);
+
+    //cache.dirty();
+    Ok(HttpResponse::Ok().body(bincode::serialize(&article).map_err(ResError::new)?))
+}
+
+#[put("/article/{id}")]
+async fn update_article(
+    pool: web::Data<SqlitePool>,
+    param: web::Path<i32>,
+    req: web::HttpRequest,
+    body: web::Bytes,
+) -> Result<HttpResponse, Error> {
+    check_login(req)?;
+    let mut article = bincode::deserialize::<Article>(&body).map_err(ResError::new)?;
+    article.date = chrono::Local::now().naive_local();
+    let result = sqlx::query!(
+        "UPDATE article SET title = ?, brief = ?, content = ?, category = ?, labels = ?, date = ? WHERE id = ?",
+        article.title,
+        article.brief,
+        article.content,
+        article.category,
+        article.labels,
+        article.date,
+        param.0
+    )
+    .execute(&**pool)
+    .await
+    .map_err(ResError::new)?
+    .rows_affected();
+    //cache.dirty();
+    effect_one(result)
+}
+
+#[delete("/article/<id>")]
+async fn delete_article(
+    pool: web::Data<SqlitePool>,
+    param: web::Path<i32>,
+    req: web::HttpRequest,
+) -> Result<HttpResponse, Error> {
+    check_login(req)?;
+    let result = sqlx::query!("DELETE FROM article WHERE id = ?", param.0)
+        .execute(&**pool)
+        .await
+        .map_err(ResError::new)?
+        .rows_affected();
+    //cache.dirty()
+    effect_one(result)
+}
