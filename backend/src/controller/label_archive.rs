@@ -2,19 +2,32 @@ use std::{
     collections::BTreeMap,
     sync::{
         atomic::{AtomicBool, Ordering},
-        RwLock,
+        Arc,
     },
 };
+use tokio::sync::RwLock;
 
+use actix_web::{get, web, Error, HttpResponse};
 use chrono::{offset::Local, DateTime};
 use rss::{Category, Channel, ChannelBuilder, ItemBuilder};
+use sqlx::SqlitePool;
+
+use crate::controller::ResError;
+use common::Article;
+
+fn render_markdown(input: &str) -> String {
+    let parser = pulldown_cmark::Parser::new_ext(input, pulldown_cmark::Options::all());
+    let mut output = String::with_capacity(input.len() * 3 / 2);
+    pulldown_cmark::html::push_html(&mut output, parser);
+    output
+}
 
 pub struct ALCache {
-    archives: RwLock<BTreeMap<String, i32>>,
-    labels: RwLock<BTreeMap<String, i32>>,
-    rss_feed: RwLock<Channel>,
-    rss_fulltext: RwLock<Channel>,
-    is_dirty: AtomicBool,
+    archives: Arc<RwLock<BTreeMap<String, i32>>>,
+    labels: Arc<RwLock<BTreeMap<String, i32>>>,
+    rss_feed: Arc<RwLock<Channel>>,
+    rss_fulltext: Arc<RwLock<Channel>>,
+    is_dirty: Arc<AtomicBool>,
 }
 
 impl ALCache {
@@ -29,29 +42,31 @@ impl ALCache {
             .build()
             .unwrap();
         let cache = ALCache {
-            archives: RwLock::new(BTreeMap::new()),
-            labels: RwLock::new(BTreeMap::new()),
-            rss_feed: RwLock::new(rss_builder.clone()),
-            rss_fulltext: RwLock::new(rss_builder.clone()),
-            is_dirty: AtomicBool::new(true),
+            archives: Arc::new(RwLock::new(BTreeMap::new())),
+            labels: Arc::new(RwLock::new(BTreeMap::new())),
+            rss_feed: Arc::new(RwLock::new(rss_builder.clone())),
+            rss_fulltext: Arc::new(RwLock::new(rss_builder.clone())),
+            is_dirty: Arc::new(AtomicBool::new(true)),
         };
         cache
     }
 
-    pub fn refresh_cache(&self, conn: DbConn) {
-        let labels: &mut BTreeMap<String, i32> = &mut self.labels.write().unwrap();
-        let archives: &mut BTreeMap<String, i32> = &mut self.archives.write().unwrap();
+    pub async fn refresh_cache(&self, pool: &SqlitePool) -> Result<(), ResError<sqlx::Error>> {
+        let labels = &mut *self.labels.write().await;
+        let archives = &mut *self.archives.write().await;
         labels.clear();
         archives.clear();
 
-        let rss_feed: &mut Channel = &mut self.rss_feed.write().unwrap();
-        let rss_fulltext: &mut Channel = &mut self.rss_fulltext.write().unwrap();
+        let rss_feed = &mut *self.rss_feed.write().await;
+        let rss_fulltext = &mut *self.rss_fulltext.write().await;
         // filter help page
-        let result: Vec<Article> = article::table
-            .filter(article::id.gt(20000))
-            .order(article::date.desc())
-            .load(&*conn)
-            .expect("error");
+        let result = sqlx::query_as!(
+            Article,
+            "SELECT * FROM article WHERE id > 20000 ORDER BY date DESC"
+        )
+        .fetch_all(pool)
+        .await
+        .map_err(ResError::new)?;
         let mut feed_items = Vec::new();
         let mut fulltext_items = Vec::new();
         for article in result {
@@ -90,7 +105,7 @@ impl ALCache {
             item_builder.set_description(format!(
                 "{}\n\n{}",
                 article.brief,
-                markdown_to_html(&article.content, &ComrakOptions::default())
+                render_markdown(&article.content)
             ));
             fulltext_items.push(item_builder);
         }
@@ -101,6 +116,8 @@ impl ALCache {
         rss_fulltext.set_items(fulltext_items);
         rss_fulltext.set_pub_date(date.clone());
         rss_fulltext.set_last_build_date(date.clone());
+
+        Ok(())
     }
 
     #[inline]
@@ -109,34 +126,49 @@ impl ALCache {
     }
 
     #[inline]
-    pub fn check_dirty(&self, conn: DbConn) {
+    pub async fn check_dirty(&self, pool: &SqlitePool) -> Result<(), ResError<sqlx::Error>> {
         if self.is_dirty.load(Ordering::Relaxed) {
-            self.refresh_cache(conn);
+            self.refresh_cache(pool).await?;
             self.is_dirty.store(false, Ordering::Relaxed);
         }
+        Ok(())
     }
 }
 
 #[get("/archive")]
-async fn get_archive() -> Json<BTreeMap<String, i32>> {
-    cache.check_dirty(conn);
-    Json(cache.archives.read().unwrap().clone())
+async fn get_archive(
+    pool: web::Data<SqlitePool>,
+    cache: web::Data<ALCache>,
+) -> Result<HttpResponse, Error> {
+    cache.check_dirty(&**pool).await?;
+    let result = cache.archives.read().await;
+    Ok(HttpResponse::Ok().body(bincode::serialize(&*result).map_err(ResError::new)?))
 }
 
-#[get("/labels")]
-pub fn get_label(cache: State<ALCache>, conn: DbConn) -> Json<BTreeMap<String, i32>> {
-    cache.check_dirty(conn);
-    Json(cache.labels.read().unwrap().clone())
+#[get("/label")]
+async fn get_label(
+    pool: web::Data<SqlitePool>,
+    cache: web::Data<ALCache>,
+) -> Result<HttpResponse, Error> {
+    cache.check_dirty(&**pool).await?;
+    let result = cache.labels.read().await;
+    Ok(HttpResponse::Ok().body(bincode::serialize(&*result).map_err(ResError::new)?))
 }
 
 #[get("/rss/feed")]
-pub fn rss_feed(cache: State<ALCache>, conn: DbConn) -> Xml<String> {
-    cache.check_dirty(conn);
-    Xml(cache.rss_feed.read().unwrap().to_string())
+async fn get_rss_feed(
+    pool: web::Data<SqlitePool>,
+    cache: web::Data<ALCache>,
+) -> Result<HttpResponse, Error> {
+    cache.check_dirty(&**pool).await?;
+    Ok(HttpResponse::Ok().body(cache.rss_feed.read().await.to_string()))
 }
 
 #[get("/rss/full")]
-pub fn rss_full(cache: State<ALCache>, conn: DbConn) -> Xml<String> {
-    cache.check_dirty(conn);
-    Xml(cache.rss_fulltext.read().unwrap().to_string())
+async fn get_rss_full(
+    pool: web::Data<SqlitePool>,
+    cache: web::Data<ALCache>,
+) -> Result<HttpResponse, Error> {
+    cache.check_dirty(&**pool).await?;
+    Ok(HttpResponse::Ok().body(cache.rss_fulltext.read().await.to_string()))
 }

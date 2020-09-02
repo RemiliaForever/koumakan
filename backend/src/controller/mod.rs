@@ -3,9 +3,9 @@ mod comment;
 mod label_archive;
 mod user;
 
-//pub use self::label_archive::ALCache;
-
 use actix_web::{web, Error, HttpResponse, ResponseError};
+
+pub use self::label_archive::ALCache;
 
 #[derive(Debug)]
 pub struct ResError<T>
@@ -56,6 +56,11 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 
     cfg.service(comment::get_article_comments);
     cfg.service(comment::create_comment);
+
+    cfg.service(label_archive::get_archive);
+    cfg.service(label_archive::get_label);
+    cfg.service(label_archive::get_rss_feed);
+    cfg.service(label_archive::get_rss_full);
 
     cfg.service(user::get_login);
 }

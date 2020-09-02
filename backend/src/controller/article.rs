@@ -1,11 +1,8 @@
 use actix_web::{delete, get, post, put, web, Error, HttpResponse};
 use sqlx::{Done, SqlitePool};
 
+use crate::controller::{effect_one, user::check_login, ALCache, ResError};
 use common::Article;
-
-use crate::controller::{effect_one, user::check_login, ResError};
-
-// use crate::controller::ALCache;
 
 #[get("/article/{id}")]
 async fn get_article(
@@ -139,6 +136,7 @@ async fn get_article_nav(
 #[post("/article")]
 async fn create_article(
     pool: web::Data<SqlitePool>,
+    cache: web::Data<ALCache>,
     req: web::HttpRequest,
     body: web::Bytes,
 ) -> Result<HttpResponse, Error> {
@@ -161,13 +159,14 @@ async fn create_article(
     .last_insert_rowid();
     article.id = Some(result);
 
-    //cache.dirty();
+    cache.dirty();
     Ok(HttpResponse::Ok().body(bincode::serialize(&article).map_err(ResError::new)?))
 }
 
 #[put("/article/{id}")]
 async fn update_article(
     pool: web::Data<SqlitePool>,
+    cache: web::Data<ALCache>,
     param: web::Path<i32>,
     req: web::HttpRequest,
     body: web::Bytes,
@@ -189,13 +188,15 @@ async fn update_article(
     .await
     .map_err(ResError::new)?
     .rows_affected();
-    //cache.dirty();
+
+    cache.dirty();
     effect_one(result)
 }
 
 #[delete("/article/<id>")]
 async fn delete_article(
     pool: web::Data<SqlitePool>,
+    cache: web::Data<ALCache>,
     param: web::Path<i32>,
     req: web::HttpRequest,
 ) -> Result<HttpResponse, Error> {
@@ -205,6 +206,7 @@ async fn delete_article(
         .await
         .map_err(ResError::new)?
         .rows_affected();
-    //cache.dirty()
+
+    cache.dirty();
     effect_one(result)
 }

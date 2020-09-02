@@ -5,7 +5,6 @@ use actix_web::{middleware, App, HttpServer};
 use anyhow::Result;
 use sqlx::SqlitePool;
 
-mod catcher;
 mod controller;
 
 #[actix_rt::main]
@@ -19,6 +18,7 @@ async fn main() -> Result<()> {
     HttpServer::new(move || {
         App::new()
             .data(db_pool.clone())
+            .data(controller::ALCache::init_cache())
             .wrap(middleware::Logger::default())
             .configure(controller::init)
     })

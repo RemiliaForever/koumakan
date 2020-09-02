@@ -2,9 +2,8 @@ use actix_web::{get, post, web, Error, HttpResponse};
 use lettre::Transport;
 use sqlx::SqlitePool;
 
-use common::Comment;
-
 use crate::controller::ResError;
+use common::Comment;
 
 #[get("/article/{id}/comment")]
 async fn get_article_comments(
