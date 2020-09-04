@@ -2,18 +2,22 @@
 extern crate log;
 
 use actix_web::{middleware, App, HttpServer};
-use anyhow::Result;
 use sqlx::SqlitePool;
 
 mod controller;
 
 #[actix_rt::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), String> {
     dotenv::dotenv().ok();
     env_logger::init();
 
-    let db_pool = SqlitePool::connect(&dotenv::var("DATABASE_URL").unwrap()).await?;
-    sqlx::migrate!("./migrations").run(&db_pool).await?;
+    let db_pool = SqlitePool::connect(&dotenv::var("DATABASE_URL").unwrap())
+        .await
+        .map_err(|e| e.to_string())?;
+    sqlx::migrate!("./migrations")
+        .run(&db_pool)
+        .await
+        .map_err(|e| e.to_string())?;
 
     HttpServer::new(move || {
         App::new()
@@ -26,9 +30,11 @@ async fn main() -> Result<()> {
         "{}:{}",
         dotenv::var("HOST").unwrap(),
         dotenv::var("PORT").unwrap()
-    ))?
+    ))
+    .map_err(|e| e.to_string())?
     .run()
-    .await?;
+    .await
+    .map_err(|e| e.to_string())?;
 
     Ok(())
 }

@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "sqlx")]
 use sqlx::FromRow;
 
 #[derive(Debug)]

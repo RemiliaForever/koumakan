@@ -60,13 +60,11 @@ async fn create_comment(
 }
 
 fn send_email(comment: &Comment) -> Result<String, String> {
-    // send email
-    let email = lettre::Message::builder()
-        .from("Blog Notifier <notify@koumakan.cc>".parse().unwrap())
-        .reply_to("RemiliaForever <remilia@kouamkan.cc>".parse().unwrap())
-        .subject("New comment from blog".to_string())
-        .body(format!(
-            r#"
+    let from = "Blog Notifier <notify@koumakan.cc>";
+    let to = "RemiliaForever <remilia@kouamkan.cc>";
+    let subject = "New comment from blog";
+    let body = format!(
+        r#"
     You got one new comment.
 
     article: https://blog.koumakan.cc/article/{}
@@ -78,15 +76,20 @@ fn send_email(comment: &Comment) -> Result<String, String> {
 
     {}
     "#,
-            comment.article_id,
-            comment.date,
-            comment.name,
-            comment.email,
-            comment.website,
-            comment.content
-        ))
+        comment.article_id,
+        comment.date,
+        comment.name,
+        comment.email,
+        comment.website,
+        comment.content
+    );
+    let email = lettre::Message::builder()
+        .from(from.parse().unwrap())
+        .to(to.parse().unwrap())
+        .subject(subject)
+        .body(body)
         .map_err(|e| e.to_string())?;
-    lettre::SmtpTransport::unencrypted_localhost()
+    lettre::SendmailTransport::new()
         .send(&email)
         .map(|_r| "Ok".to_owned())
         .map_err(|e| e.to_string())
