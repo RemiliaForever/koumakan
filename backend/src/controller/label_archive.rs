@@ -7,7 +7,7 @@ use std::{
 };
 use tokio::sync::RwLock;
 
-use actix_web::{get, web, Error, HttpResponse};
+use actix_web::{get, web, HttpResponse};
 use chrono::{offset::Local, DateTime};
 use rss::{Category, Channel, ChannelBuilder, ItemBuilder};
 use sqlx::SqlitePool;
@@ -51,7 +51,7 @@ impl ALCache {
         cache
     }
 
-    pub async fn refresh_cache(&self, pool: &SqlitePool) -> Result<(), ResError<sqlx::Error>> {
+    pub async fn refresh_cache(&self, pool: &SqlitePool) -> Result<(), ResError> {
         let labels = &mut *self.labels.write().await;
         let archives = &mut *self.archives.write().await;
         labels.clear();
@@ -65,8 +65,7 @@ impl ALCache {
             "SELECT * FROM article WHERE id > 20000 ORDER BY date DESC"
         )
         .fetch_all(pool)
-        .await
-        .map_err(ResError::new)?;
+        .await?;
         let mut feed_items = Vec::new();
         let mut fulltext_items = Vec::new();
         for article in result {
@@ -92,10 +91,7 @@ impl ALCache {
             let datetime = DateTime::<Local>::from_utc(article.date - offset, offset);
             let mut item_builder = ItemBuilder::default()
                 .title(article.title)
-                .link(format!(
-                    "https://blog.koumakan.cc/article/{}",
-                    article.id.unwrap()
-                ))
+                .link(format!("https://blog.koumakan.cc/article/{}", article.id))
                 .categories(vec![category])
                 .pub_date(datetime.to_rfc2822())
                 .build()
@@ -126,7 +122,7 @@ impl ALCache {
     }
 
     #[inline]
-    pub async fn check_dirty(&self, pool: &SqlitePool) -> Result<(), ResError<sqlx::Error>> {
+    pub async fn check_dirty(&self, pool: &SqlitePool) -> Result<(), ResError> {
         if self.is_dirty.load(Ordering::Relaxed) {
             self.refresh_cache(pool).await?;
             self.is_dirty.store(false, Ordering::Relaxed);
@@ -139,36 +135,40 @@ impl ALCache {
 async fn get_archive(
     pool: web::Data<SqlitePool>,
     cache: web::Data<ALCache>,
-) -> Result<HttpResponse, Error> {
+) -> Result<HttpResponse, ResError> {
     cache.check_dirty(&**pool).await?;
     let result = cache.archives.read().await;
-    Ok(HttpResponse::Ok().body(bincode::serialize(&*result).map_err(ResError::new)?))
+    Ok(HttpResponse::Ok().body(bincode::serialize(&*result)?))
 }
 
 #[get("/label")]
 async fn get_label(
     pool: web::Data<SqlitePool>,
     cache: web::Data<ALCache>,
-) -> Result<HttpResponse, Error> {
+) -> Result<HttpResponse, ResError> {
     cache.check_dirty(&**pool).await?;
     let result = cache.labels.read().await;
-    Ok(HttpResponse::Ok().body(bincode::serialize(&*result).map_err(ResError::new)?))
+    Ok(HttpResponse::Ok().body(bincode::serialize(&*result)?))
 }
 
 #[get("/rss/feed")]
 async fn get_rss_feed(
     pool: web::Data<SqlitePool>,
     cache: web::Data<ALCache>,
-) -> Result<HttpResponse, Error> {
+) -> Result<HttpResponse, ResError> {
     cache.check_dirty(&**pool).await?;
-    Ok(HttpResponse::Ok().body(cache.rss_feed.read().await.to_string()))
+    Ok(HttpResponse::Ok()
+        .insert_header(("Content-Type", "application/rss+xml; charset=utf-8"))
+        .body(cache.rss_feed.read().await.to_string()))
 }
 
 #[get("/rss/full")]
 async fn get_rss_full(
     pool: web::Data<SqlitePool>,
     cache: web::Data<ALCache>,
-) -> Result<HttpResponse, Error> {
+) -> Result<HttpResponse, ResError> {
     cache.check_dirty(&**pool).await?;
-    Ok(HttpResponse::Ok().body(cache.rss_fulltext.read().await.to_string()))
+    Ok(HttpResponse::Ok()
+        .insert_header(("Content-Type", "application/rss+xml; charset=utf-8"))
+        .body(cache.rss_fulltext.read().await.to_string()))
 }

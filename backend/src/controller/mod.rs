@@ -3,41 +3,13 @@ mod comment;
 mod label_archive;
 mod user;
 
-use actix_web::{web, Error, HttpResponse, ResponseError};
+use actix_web::{web, HttpResponse};
 
 pub use self::label_archive::ALCache;
-
-#[derive(Debug)]
-pub struct ResError<T>
-where
-    T: std::fmt::Debug,
-{
-    cause: T,
-}
-
-impl<T> std::fmt::Display for ResError<T>
-where
-    T: std::fmt::Debug,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "")
-    }
-}
-
-impl<T> ResError<T>
-where
-    T: std::fmt::Debug + 'static,
-{
-    #[inline]
-    pub fn new(e: T) -> ResError<T> {
-        ResError { cause: e }
-    }
-}
-
-impl<T> ResponseError for ResError<T> where T: std::fmt::Debug {}
+use crate::common::ResError;
 
 #[inline]
-pub fn effect_one(result: u64) -> Result<HttpResponse, Error> {
+pub fn effect_one(result: u64) -> Result<HttpResponse, ResError> {
     if result == 1 {
         Ok(HttpResponse::Ok().finish())
     } else if result == 0 {
@@ -48,6 +20,7 @@ pub fn effect_one(result: u64) -> Result<HttpResponse, Error> {
 }
 
 pub fn init(cfg: &mut web::ServiceConfig) {
+    cfg.service(article::get_article_list);
     cfg.service(article::get_article);
     cfg.service(article::get_article_nav);
     cfg.service(article::create_article);

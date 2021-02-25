@@ -1,9 +1,7 @@
-#[macro_use]
-extern crate log;
-
 use actix_web::{middleware, App, HttpServer};
 use sqlx::SqlitePool;
 
+mod common;
 mod controller;
 
 #[actix_rt::main]

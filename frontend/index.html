@@ -4,9 +4,22 @@
         <meta charset="utf-8" />
         <title>Yew • TodoMVC</title>
 
-        <script src="/koumakan.js"></script>
+        <style>
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+        </style>
     </head>
     <body>
+        <p>
+            <span>载入中，请使用支持wasm的浏览器</span>
+        </p>
+
+
+        <script src="/koumakan.js"></script>
         <script>
             wasm_bindgen("koumakan_bg.wasm").catch(console.error)
         </script>

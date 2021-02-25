@@ -3,13 +3,20 @@
 #[macro_use]
 extern crate log;
 
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 use wasm_bindgen::prelude::*;
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
+use yew_router::prelude::{Route, Router, RouterButton};
 
 //use common::Article;
 
-//mod router;
-//mod views;
+mod component;
+mod router;
+mod view;
+
+use router::AppRouter;
 
 struct App {
     title: &'static str,
@@ -49,7 +56,22 @@ impl Component for App {
     fn view(&self) -> Html {
         html! {
             <div>
-            {"hhhh"}
+                <nav>
+                    <RouterButton<AppRouter> route=AppRouter::Root>{"root"}</RouterButton<AppRouter>>
+                    <RouterButton<AppRouter> route=AppRouter::Index>{"index"}</RouterButton<AppRouter>>
+                    <RouterButton<AppRouter> route=AppRouter::Indexr>{"indexr"}</RouterButton<AppRouter>>
+                </nav>
+                <Router<AppRouter>
+                    render = Router::render(|route: AppRouter| {
+                        debug!("jump to {:?}", route);
+                        match route {
+                            AppRouter::Index => html!{ <view::Index /> },
+                            AppRouter::Indexr => html!{ <view::Indexr /> },
+                            _ => html!{{format!("{:?}", route)}}
+                        }
+                    })
+                    redirect = Router::redirect(|_route: Route| AppRouter::Index)
+                />
             </div>
         }
     }
@@ -57,17 +79,10 @@ impl Component for App {
 
 #[wasm_bindgen(start)]
 pub fn run() -> Result<(), wasm_bindgen::JsValue> {
-    let _window = web_sys::window().ok_or("get window failed")?;
-
     #[cfg(debug_assertions)]
     console_log::init_with_level(log::Level::Debug).map_err(|e| e.to_string())?;
     #[cfg(not(debug_assertions))]
     console_log::init_with_level(log::Level::Info).map_err(|e| e.to_string())?;
-
-    debug!("debug");
-    info!("info");
-    warn!("warn");
-    error!("error");
 
     yew::App::<App>::new().mount_to_body();
     Ok(())

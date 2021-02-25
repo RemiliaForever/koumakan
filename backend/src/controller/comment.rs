@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, Error, HttpResponse};
+use actix_web::{get, post, web, HttpResponse};
 use lettre::Transport;
 use sqlx::SqlitePool;
 
@@ -9,20 +9,19 @@ use common::Comment;
 async fn get_article_comments(
     pool: web::Data<SqlitePool>,
     param: web::Path<i32>,
-) -> Result<HttpResponse, Error> {
+) -> Result<HttpResponse, ResError> {
     let mut comments = sqlx::query_as!(
         Comment,
         "SELECT * FROM comment WHERE article_id = ? ORDER BY comment.date DESC",
-        param.0
+        *param
     )
     .fetch_all(&**pool)
-    .await
-    .map_err(ResError::new)?;
+    .await?;
     // mask user's email
     for comment in &mut comments {
         comment.email = "".to_owned();
     }
-    Ok(HttpResponse::Ok().body(bincode::serialize(&comments).map_err(ResError::new)?))
+    Ok(HttpResponse::Ok().body(bincode::serialize(&comments)?))
 }
 
 #[post("/article/{id}/comment")]
@@ -30,9 +29,9 @@ async fn create_comment(
     pool: web::Data<SqlitePool>,
     param: web::Path<i64>,
     body: web::Bytes,
-) -> Result<HttpResponse, Error> {
-    let mut comment = bincode::deserialize::<Comment>(&body).map_err(ResError::new)?;
-    comment.article_id = param.0;
+) -> Result<HttpResponse, ResError> {
+    let mut comment = bincode::deserialize::<Comment>(&body)?;
+    comment.article_id = *param;
     // caculate avatar
     comment.avatar = format!(
         "https://www.gravatar.com/avatar/{:x}?s=56d=identicon",
@@ -50,13 +49,12 @@ async fn create_comment(
         comment.date
     )
     .execute(&**pool)
-    .await
-    .map_err(ResError::new)?
+    .await?
     .last_insert_rowid();
-    comment.id = Some(result);
+    comment.id = result;
 
-    info!("Send mail: {:?}", send_email(&comment));
-    Ok(HttpResponse::Ok().body(bincode::serialize(&comment).map_err(ResError::new)?))
+    log::info!("Send mail: {:?}", send_email(&comment));
+    Ok(HttpResponse::Ok().body(bincode::serialize(&comment)?))
 }
 
 fn send_email(comment: &Comment) -> Result<String, String> {

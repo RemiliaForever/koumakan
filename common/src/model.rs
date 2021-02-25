@@ -7,7 +7,7 @@ use sqlx::FromRow;
 #[derive(Serialize, Deserialize)]
 #[cfg_attr(feature = "sqlx", derive(FromRow))]
 pub struct Comment {
-    pub id: Option<i64>,
+    pub id: i64,
     pub article_id: i64,
     pub name: String,
     pub email: String,
@@ -21,7 +21,7 @@ pub struct Comment {
 #[derive(Serialize, Deserialize)]
 #[cfg_attr(feature = "sqlx", derive(FromRow))]
 pub struct Article {
-    pub id: Option<i64>,
+    pub id: i64,
     pub title: String,
     pub brief: String,
     pub content: String,

@@ -1,5 +1,9 @@
 # vim:ft=make
 
+.PHONY: hotreload
+hotreload:
+	watchexec -r -s SIGTERM -- $(MAKE) dev
+
 .PHONY: dev
 dev:
 	cargo build --target wasm32-unknown-unknown
