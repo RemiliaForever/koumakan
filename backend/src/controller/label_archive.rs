@@ -5,14 +5,22 @@ use std::{
         Arc,
     },
 };
-use tokio::sync::RwLock;
 
-use actix_web::{get, web, HttpResponse};
+use axum::{
+    extract::Extension,
+    http::{
+        header::{HeaderMap, HeaderName, HeaderValue},
+        StatusCode,
+    },
+    response::IntoResponse,
+    Json,
+};
 use chrono::{offset::Local, DateTime};
 use rss::{Category, Channel, ChannelBuilder, ItemBuilder};
 use sqlx::SqlitePool;
+use tokio::sync::RwLock;
 
-use crate::controller::ResError;
+use crate::error::Error;
 use common::Article;
 
 fn render_markdown(input: &str) -> String {
@@ -22,6 +30,7 @@ fn render_markdown(input: &str) -> String {
     output
 }
 
+#[derive(Clone)]
 pub struct ALCache {
     archives: Arc<RwLock<BTreeMap<String, i32>>>,
     labels: Arc<RwLock<BTreeMap<String, i32>>>,
@@ -31,7 +40,7 @@ pub struct ALCache {
 }
 
 impl ALCache {
-    pub fn init_cache() -> ALCache {
+    pub fn new() -> ALCache {
         let rss_builder = ChannelBuilder::default()
             .title("RemiliaForever's Blog")
             .description("Welcome to Koumakan")
@@ -39,19 +48,17 @@ impl ALCache {
             .language(Some(String::from("zh-cn")))
             .copyright(Some(String::from("CC BY-NC-SA 4.0")))
             .webmaster(Some(String::from("remilia@koumakan.cc")))
-            .build()
-            .unwrap();
-        let cache = ALCache {
+            .build();
+        ALCache {
             archives: Arc::new(RwLock::new(BTreeMap::new())),
             labels: Arc::new(RwLock::new(BTreeMap::new())),
             rss_feed: Arc::new(RwLock::new(rss_builder.clone())),
             rss_fulltext: Arc::new(RwLock::new(rss_builder.clone())),
             is_dirty: Arc::new(AtomicBool::new(true)),
-        };
-        cache
+        }
     }
 
-    pub async fn refresh_cache(&self, pool: &SqlitePool) -> Result<(), ResError> {
+    pub async fn refresh_cache(&self, pool: &SqlitePool) -> Result<(), Error> {
         let labels = &mut *self.labels.write().await;
         let archives = &mut *self.archives.write().await;
         labels.clear();
@@ -94,8 +101,7 @@ impl ALCache {
                 .link(format!("https://blog.koumakan.cc/article/{}", article.id))
                 .categories(vec![category])
                 .pub_date(datetime.to_rfc2822())
-                .build()
-                .unwrap();
+                .build();
             item_builder.set_description(article.brief.clone());
             feed_items.push(item_builder.clone());
             item_builder.set_description(format!(
@@ -122,7 +128,7 @@ impl ALCache {
     }
 
     #[inline]
-    pub async fn check_dirty(&self, pool: &SqlitePool) -> Result<(), ResError> {
+    pub async fn check_dirty(&self, pool: &SqlitePool) -> Result<(), Error> {
         if self.is_dirty.load(Ordering::Relaxed) {
             self.refresh_cache(pool).await?;
             self.is_dirty.store(false, Ordering::Relaxed);
@@ -131,44 +137,52 @@ impl ALCache {
     }
 }
 
-#[get("/archive")]
-async fn get_archive(
-    pool: web::Data<SqlitePool>,
-    cache: web::Data<ALCache>,
-) -> Result<HttpResponse, ResError> {
-    cache.check_dirty(&**pool).await?;
+pub async fn get_archive(
+    Extension(db): Extension<SqlitePool>,
+    Extension(cache): Extension<ALCache>,
+) -> Result<impl IntoResponse, Error> {
+    cache.check_dirty(&db).await?;
     let result = cache.archives.read().await;
-    Ok(HttpResponse::Ok().body(bincode::serialize(&*result)?))
+    Ok(Json(result.clone()))
 }
 
-#[get("/label")]
-async fn get_label(
-    pool: web::Data<SqlitePool>,
-    cache: web::Data<ALCache>,
-) -> Result<HttpResponse, ResError> {
-    cache.check_dirty(&**pool).await?;
+pub async fn get_label(
+    Extension(db): Extension<SqlitePool>,
+    Extension(cache): Extension<ALCache>,
+) -> Result<impl IntoResponse, Error> {
+    cache.check_dirty(&db).await?;
     let result = cache.labels.read().await;
-    Ok(HttpResponse::Ok().body(bincode::serialize(&*result)?))
+    Ok(Json(result.clone()))
 }
 
-#[get("/rss/feed")]
-async fn get_rss_feed(
-    pool: web::Data<SqlitePool>,
-    cache: web::Data<ALCache>,
-) -> Result<HttpResponse, ResError> {
-    cache.check_dirty(&**pool).await?;
-    Ok(HttpResponse::Ok()
-        .insert_header(("Content-Type", "application/rss+xml; charset=utf-8"))
-        .body(cache.rss_feed.read().await.to_string()))
+pub async fn get_rss_feed(
+    Extension(db): Extension<SqlitePool>,
+    Extension(cache): Extension<ALCache>,
+) -> Result<impl IntoResponse, Error> {
+    cache.check_dirty(&db).await?;
+
+    let result = cache.rss_feed.read().await.to_string();
+    let mut header = HeaderMap::new();
+    header.insert(
+        HeaderName::from_static("content-type"),
+        HeaderValue::from_static("application/rss+xml; charset=utf-8"),
+    );
+
+    Ok((StatusCode::OK, header, result))
 }
 
-#[get("/rss/full")]
-async fn get_rss_full(
-    pool: web::Data<SqlitePool>,
-    cache: web::Data<ALCache>,
-) -> Result<HttpResponse, ResError> {
-    cache.check_dirty(&**pool).await?;
-    Ok(HttpResponse::Ok()
-        .insert_header(("Content-Type", "application/rss+xml; charset=utf-8"))
-        .body(cache.rss_fulltext.read().await.to_string()))
+pub async fn get_rss_full(
+    Extension(db): Extension<SqlitePool>,
+    Extension(cache): Extension<ALCache>,
+) -> Result<impl IntoResponse, Error> {
+    cache.check_dirty(&db).await?;
+
+    let result = cache.rss_fulltext.read().await.to_string();
+    let mut header = HeaderMap::new();
+    header.insert(
+        HeaderName::from_static("content-type"),
+        HeaderValue::from_static("application/rss+xml; charset=utf-8"),
+    );
+
+    Ok((StatusCode::OK, header, result))
 }

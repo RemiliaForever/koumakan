@@ -1,43 +1,59 @@
-use actix_web::{get, post, web, HttpResponse};
-use lettre::Transport;
+use axum::{
+    extract::{Extension, Path},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
+use lettre::AsyncTransport;
 use sqlx::SqlitePool;
 
-use crate::controller::ResError;
+use crate::{
+    error::Error,
+    util::{GetOrDefault, JSON},
+};
 use common::Comment;
 
-#[get("/article/{id}/comment")]
-async fn get_article_comments(
-    pool: web::Data<SqlitePool>,
-    param: web::Path<i32>,
-) -> Result<HttpResponse, ResError> {
+pub async fn get_article_comments(
+    Extension(db): Extension<SqlitePool>,
+    Path(id): Path<i32>,
+) -> Result<impl IntoResponse, Error> {
     let mut comments = sqlx::query_as!(
         Comment,
         "SELECT * FROM comment WHERE article_id = ? ORDER BY comment.date DESC",
-        *param
+        id
     )
-    .fetch_all(&**pool)
+    .fetch_all(&db)
     .await?;
     // mask user's email
     for comment in &mut comments {
         comment.email = "".to_owned();
     }
-    Ok(HttpResponse::Ok().body(bincode::serialize(&comments)?))
+    Ok(Json(comments))
 }
 
-#[post("/article/{id}/comment")]
-async fn create_comment(
-    pool: web::Data<SqlitePool>,
-    param: web::Path<i64>,
-    body: web::Bytes,
-) -> Result<HttpResponse, ResError> {
-    let mut comment = bincode::deserialize::<Comment>(&body)?;
-    comment.article_id = *param;
-    // caculate avatar
-    comment.avatar = format!(
-        "https://www.gravatar.com/avatar/{:x}?s=56d=identicon",
-        md5::compute(comment.email.trim())
-    );
-    comment.date = chrono::Local::now().naive_local();
+pub async fn create_comment(
+    Extension(db): Extension<SqlitePool>,
+    Path(id): Path<i64>,
+    Json(body): Json<JSON>,
+) -> Result<impl IntoResponse, Error> {
+    let email: String = body.get_or_default("email");
+    let hash = md5::compute(email.trim());
+    let mut comment = Comment {
+        id: 0,
+        article_id: id,
+        name: body.get_or_default("name"),
+        email,
+        website: body.get_or_default("website"),
+        content: body.get_or_default("content"),
+        avatar: format!("https://www.gravatar.com/avatar/{:x}?s=56d=identicon", hash,),
+        date: chrono::Local::now().naive_local(),
+    };
+
+    // check
+    if comment.name.is_empty() || comment.email.is_empty() || comment.content.is_empty() {
+        return Ok((StatusCode::BAD_REQUEST, "name or content is empty"));
+    }
+
     let result = sqlx::query!(
         "INSERT INTO comment VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)",
         comment.article_id,
@@ -48,16 +64,19 @@ async fn create_comment(
         comment.avatar,
         comment.date
     )
-    .execute(&**pool)
+    .execute(&db)
     .await?
     .last_insert_rowid();
     comment.id = result;
 
-    log::info!("Send mail: {:?}", send_email(&comment));
-    Ok(HttpResponse::Ok().body(bincode::serialize(&comment)?))
+    match send_email(&comment).await {
+        Ok(_) => log::info!("Send mail: Ok"),
+        Err(e) => log::error!("Send mail: {}", e),
+    };
+    Ok((StatusCode::OK, ""))
 }
 
-fn send_email(comment: &Comment) -> Result<String, String> {
+async fn send_email(comment: &Comment) -> Result<(), Error> {
     let from = "Blog Notifier <notify@koumakan.cc>";
     let to = "RemiliaForever <remilia@kouamkan.cc>";
     let subject = "New comment from blog";
@@ -85,10 +104,8 @@ fn send_email(comment: &Comment) -> Result<String, String> {
         .from(from.parse().unwrap())
         .to(to.parse().unwrap())
         .subject(subject)
-        .body(body)
-        .map_err(|e| e.to_string())?;
-    lettre::SendmailTransport::new()
-        .send(&email)
-        .map(|_r| "Ok".to_owned())
-        .map_err(|e| e.to_string())
+        .body(body)?;
+    lettre::AsyncSendmailTransport::new().send(email).await?;
+
+    Ok(())
 }

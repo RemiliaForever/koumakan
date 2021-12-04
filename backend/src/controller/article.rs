@@ -1,50 +1,47 @@
-use actix_web::{delete, get, post, put, web, HttpResponse};
-use log::debug;
-use serde_derive::Deserialize;
+use axum::{
+    extract::{Extension, Path, Query},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
 use sqlx::SqlitePool;
 
 use crate::{
-    common::ResError,
-    controller::{effect_one, user::check_login, ALCache},
+    controller::label_archive::ALCache,
+    error::Error,
+    util::{GetOrDefault, JSON},
 };
 use common::Article;
 
-#[get("/article/{id}")]
-async fn get_article(
-    pool: web::Data<SqlitePool>,
-    param: web::Path<i32>,
-) -> Result<HttpResponse, ResError> {
-    let article = match sqlx::query_as!(Article, "SELECT * FROM article WHERE id = ?", *param)
-        .fetch_optional(&**pool)
-        .await?
-    {
-        Some(result) => result,
-        None => Err(ResError::from(http::StatusCode::NOT_FOUND))?,
-    };
-    debug!("body: {:?}", article);
-    Ok(HttpResponse::Ok().body(bincode::serialize(&article)?))
+pub async fn get_article(
+    Extension(db): Extension<SqlitePool>,
+    Path(id): Path<i32>,
+) -> Result<impl IntoResponse, Error> {
+    let article = sqlx::query_as!(Article, "SELECT * FROM article WHERE id = ?", id)
+        .fetch_one(&db)
+        .await?;
+    Ok(Json(article))
 }
 
-#[get("/article/{id}/nav")]
-async fn get_article_nav(
-    pool: web::Data<SqlitePool>,
-    param: web::Path<i32>,
-) -> Result<HttpResponse, ResError> {
-    let pre = *param - 1;
+pub async fn get_article_nav(
+    Extension(db): Extension<SqlitePool>,
+    Path(id): Path<i32>,
+) -> Result<impl IntoResponse, Error> {
+    let pre = id - 1;
     let art_pre = sqlx::query_as!(Article, "SELECT * FROM article WHERE id = ?", pre)
-        .fetch_optional(&**pool)
+        .fetch_optional(&db)
         .await?;
 
-    let next = *param + 1;
+    let next = id + 1;
     let art_next = sqlx::query_as!(Article, "SELECT * FROM article WHERE id = ?", next)
-        .fetch_optional(&**pool)
+        .fetch_optional(&db)
         .await?;
 
     let result = vec![art_pre, art_next];
-    Ok(HttpResponse::Ok().body(bincode::serialize(&result)?))
+    Ok(Json(result))
 }
 
-#[derive(Default, Debug, Deserialize)]
+#[derive(serde::Deserialize)]
 pub struct ArticleQueryParam {
     filter: Option<String>,
     value: Option<String>,
@@ -52,12 +49,10 @@ pub struct ArticleQueryParam {
     offset: Option<i64>,
 }
 
-#[get("/articles")]
-async fn get_article_list(
-    pool: web::Data<SqlitePool>,
-    param: web::Query<ArticleQueryParam>,
-) -> Result<HttpResponse, ResError> {
-    let param = param.into_inner();
+pub async fn get_article_list(
+    Extension(db): Extension<SqlitePool>,
+    Query(param): Query<ArticleQueryParam>,
+) -> Result<impl IntoResponse, Error> {
     let filter = match param.filter {
         Some(filter) => filter,
         None => String::new(),
@@ -80,7 +75,7 @@ async fn get_article_list(
             value,
             pagesize,
             offset,
-        ).fetch_all(&**pool).await?,
+        ).fetch_all(&db).await?,
         "label" => {
             let search_value = format!("%,{},%",value);
             sqlx::query_as!(Article,
@@ -88,7 +83,7 @@ async fn get_article_list(
                 search_value,
                 pagesize,
                 offset,
-            ).fetch_all(&**pool).await?},
+            ).fetch_all(&db).await?},
         "archive" => {
             let date: Vec<&str> = value.split('-').collect();
             let year = date[0].parse::<u32>().unwrap_or(2000);
@@ -101,7 +96,7 @@ async fn get_article_list(
                 end_date,
                 pagesize,
                 offset,
-            ).fetch_all(&**pool).await?
+            ).fetch_all(&db).await?
         }
         "search" => {
             let search_value =
@@ -114,14 +109,14 @@ async fn get_article_list(
                 search_value,
                 pagesize,
                 offset,
-            ).fetch_all(&**pool).await?
+            ).fetch_all(&db).await?
         },
         "" => sqlx::query_as!(Article,
             "SELECT * FROM article WHERE id > 20000 ORDER BY date DESC LIMIT ? OFFSET ?",
             pagesize,
             offset,
-        ).fetch_all(&**pool).await?,
-        _ => panic!("error typestring"),
+        ).fetch_all(&db).await?,
+        _ => return Ok((StatusCode::BAD_REQUEST, "Bad filter type").into_response()),
     };
     let result = result
         .into_iter()
@@ -130,21 +125,23 @@ async fn get_article_list(
             a
         })
         .collect::<Vec<Article>>();
-    debug!("body: {:#?}", result);
-    Ok(HttpResponse::Ok().body(bincode::serialize(&result)?))
+    Ok((StatusCode::OK, Json(result)).into_response())
 }
 
-#[post("/article")]
-async fn create_article(
-    pool: web::Data<SqlitePool>,
-    cache: web::Data<ALCache>,
-    req: web::HttpRequest,
-    body: web::Bytes,
-) -> Result<HttpResponse, ResError> {
-    check_login(req)?;
-
-    let mut article = bincode::deserialize::<Article>(&body)?;
-    article.date = chrono::Local::now().naive_local();
+pub async fn create_article(
+    Extension(db): Extension<SqlitePool>,
+    Extension(cache): Extension<ALCache>,
+    Json(body): Json<JSON>,
+) -> Result<impl IntoResponse, Error> {
+    let article = Article {
+        id: 0,
+        title: body.get_or_default("title"),
+        brief: body.get_or_default("brief"),
+        content: body.get_or_default("content"),
+        category: body.get_or_default("category"),
+        labels: body.get_or_default("labels"),
+        date: chrono::Local::now().naive_local(),
+    };
     let result = sqlx::query!(
         "INSERT INTO article VALUES (0, ?, ?, ?, ?, ?, ?)",
         article.title,
@@ -154,27 +151,29 @@ async fn create_article(
         article.labels,
         article.date,
     )
-    .execute(&**pool)
+    .execute(&db)
     .await?
     .last_insert_rowid();
-    article.id = result;
 
     cache.dirty();
-    debug!("body: {:?}", article);
-    Ok(HttpResponse::Ok().body(bincode::serialize(&article)?))
+    Ok((StatusCode::OK, Json(result)))
 }
 
-#[put("/article/{id}")]
-async fn update_article(
-    pool: web::Data<SqlitePool>,
-    cache: web::Data<ALCache>,
-    param: web::Path<i32>,
-    req: web::HttpRequest,
-    body: web::Bytes,
-) -> Result<HttpResponse, ResError> {
-    check_login(req)?;
-    let mut article = bincode::deserialize::<Article>(&body)?;
-    article.date = chrono::Local::now().naive_local();
+pub async fn update_article(
+    Extension(db): Extension<SqlitePool>,
+    Extension(cache): Extension<ALCache>,
+    Path(id): Path<i32>,
+    Json(body): Json<JSON>,
+) -> Result<impl IntoResponse, Error> {
+    let article = Article {
+        id: 0,
+        title: body.get_or_default("title"),
+        brief: body.get_or_default("brief"),
+        content: body.get_or_default("content"),
+        category: body.get_or_default("category"),
+        labels: body.get_or_default("labels"),
+        date: chrono::Local::now().naive_local(),
+    };
     let result = sqlx::query!(
         "UPDATE article SET title = ?, brief = ?, content = ?, category = ?, labels = ?, date = ? WHERE id = ?",
         article.title,
@@ -183,29 +182,28 @@ async fn update_article(
         article.category,
         article.labels,
         article.date,
-        *param
-    )
-        .execute(&**pool)
-        .await?
-        .rows_affected();
+        id,
+    ).execute(&db)
+    .await?
+    .rows_affected();
 
-    cache.dirty();
-    effect_one(result)
+    if result == 0 {
+        Ok(StatusCode::NOT_FOUND.into_response())
+    } else {
+        cache.dirty();
+        Ok(().into_response())
+    }
 }
 
-#[delete("/article/{id}")]
-async fn delete_article(
-    pool: web::Data<SqlitePool>,
-    cache: web::Data<ALCache>,
-    param: web::Path<i32>,
-    req: web::HttpRequest,
-) -> Result<HttpResponse, ResError> {
-    check_login(req)?;
-    let result = sqlx::query!("DELETE FROM article WHERE id = ?", *param)
-        .execute(&**pool)
-        .await?
-        .rows_affected();
-
+pub async fn delete_article(
+    Extension(db): Extension<SqlitePool>,
+    Extension(cache): Extension<ALCache>,
+    Path(id): Path<i32>,
+) -> Result<impl IntoResponse, Error> {
+    sqlx::query!("DELETE FROM article WHERE id = ?", id)
+        .execute(&db)
+        .await?;
     cache.dirty();
-    effect_one(result)
+
+    Ok(())
 }
