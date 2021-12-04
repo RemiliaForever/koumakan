@@ -4,6 +4,7 @@ use axum::{
     response::IntoResponse,
     Json,
 };
+use serde_json::json;
 use sqlx::SqlitePool;
 
 use crate::{
@@ -27,17 +28,20 @@ pub async fn get_article_nav(
     Extension(db): Extension<SqlitePool>,
     Path(id): Path<i32>,
 ) -> Result<impl IntoResponse, Error> {
-    let pre = id - 1;
-    let art_pre = sqlx::query_as!(Article, "SELECT * FROM article WHERE id = ?", pre)
-        .fetch_optional(&db)
-        .await?;
+    #[inline]
+    async fn get_nav(db: &SqlitePool, id: i32) -> Result<serde_json::Value, Error> {
+        match sqlx::query!("SELECT title FROM article WHERE id = ?", id)
+            .fetch_optional(db)
+            .await?
+        {
+            Some(r) => Ok(json!({"id": id, "title": r.title})),
+            None => Ok(json!({"id": -1, "title": "没有了"})),
+        }
+    }
 
-    let next = id + 1;
-    let art_next = sqlx::query_as!(Article, "SELECT * FROM article WHERE id = ?", next)
-        .fetch_optional(&db)
-        .await?;
-
-    let result = vec![art_pre, art_next];
+    let mut result = std::collections::HashMap::with_capacity(2);
+    result.insert("pre", get_nav(&db, id - 1).await?);
+    result.insert("next", get_nav(&db, id + 1).await?);
     Ok(Json(result))
 }
 
@@ -98,25 +102,25 @@ pub async fn get_article_list(
                 offset,
             ).fetch_all(&db).await?
         }
-        "search" => {
-            let search_value =
-                format!("%{}%", value);
-            sqlx::query_as!(Article,
-                "SELECT * FROM article WHERE id > 20000 AND ( title LIKE ? OR brief LIKE ? OR category LIKE ? OR labels LIKE ? ) ORDER BY date DESC LIMIT ? OFFSET ?",
-                search_value,
-                search_value,
-                search_value,
-                search_value,
+            "search" => {
+                let search_value =
+                    format!("%{}%", value);
+                sqlx::query_as!(Article,
+                    "SELECT * FROM article WHERE id > 20000 AND ( title LIKE ? OR brief LIKE ? OR category LIKE ? OR labels LIKE ? ) ORDER BY date DESC LIMIT ? OFFSET ?",
+                    search_value,
+                    search_value,
+                    search_value,
+                    search_value,
+                    pagesize,
+                    offset,
+                ).fetch_all(&db).await?
+            },
+            "" => sqlx::query_as!(Article,
+                "SELECT * FROM article WHERE id > 20000 ORDER BY date DESC LIMIT ? OFFSET ?",
                 pagesize,
                 offset,
-            ).fetch_all(&db).await?
-        },
-        "" => sqlx::query_as!(Article,
-            "SELECT * FROM article WHERE id > 20000 ORDER BY date DESC LIMIT ? OFFSET ?",
-            pagesize,
-            offset,
-        ).fetch_all(&db).await?,
-        _ => return Ok((StatusCode::BAD_REQUEST, "Bad filter type").into_response()),
+            ).fetch_all(&db).await?,
+            _ => return Ok((StatusCode::BAD_REQUEST, "Bad filter type").into_response()),
     };
     let result = result
         .into_iter()
@@ -184,8 +188,8 @@ pub async fn update_article(
         article.date,
         id,
     ).execute(&db)
-    .await?
-    .rows_affected();
+        .await?
+        .rows_affected();
 
     if result == 0 {
         Ok(StatusCode::NOT_FOUND.into_response())

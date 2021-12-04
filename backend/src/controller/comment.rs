@@ -33,14 +33,13 @@ pub async fn get_article_comments(
 
 pub async fn create_comment(
     Extension(db): Extension<SqlitePool>,
-    Path(id): Path<i64>,
     Json(body): Json<JSON>,
 ) -> Result<impl IntoResponse, Error> {
     let email: String = body.get_or_default("email");
     let hash = md5::compute(email.trim());
     let mut comment = Comment {
         id: 0,
-        article_id: id,
+        article_id: body.get_or_default("article_id"),
         name: body.get_or_default("name"),
         email,
         website: body.get_or_default("website"),
@@ -78,21 +77,21 @@ pub async fn create_comment(
 
 async fn send_email(comment: &Comment) -> Result<(), Error> {
     let from = "Blog Notifier <notify@koumakan.cc>";
-    let to = "RemiliaForever <remilia@kouamkan.cc>";
+    let to = "RemiliaForever <remilia@koumakan.cc>";
     let subject = "New comment from blog";
     let body = format!(
         r#"
-    You got one new comment.
+You got one new comment.
 
-    article: https://blog.koumakan.cc/article/{}
-    comment on {}
-    name: {}
-    email: {}
-    website: {}
-    content:
+article: https://blog.koumakan.cc/article/{}
+comment on {}
+name: {}
+email: {}
+website: {}
+content:
 
-    {}
-    "#,
+{}
+"#,
         comment.article_id,
         comment.date,
         comment.name,
